@@ -1,9 +1,8 @@
 var fs = require('fs');
+
 $(function () {
-    var index;
+    var originalPosition;
     var data;
-    createDB();
-    loadDB();
 
     $("#addTable").on("click", function () {
         var html = $("#new-table").clone();
@@ -11,11 +10,6 @@ $(function () {
         html.find(".name_table").text("New table");
         addTable("newTable");
         html.appendTo("main");
-        $(".draggable").draggable({
-            stop: function () {
-                updatePos($(this).attr("id"), $(this).offset().left, $(this).offset().top);
-            }
-        });
     });
 
     $("main")
@@ -26,8 +20,6 @@ $(function () {
 
         .on("click", ".cancel-field", function () {
             var parent = $(this).parents("tr").eq(0);
-            var nameField = parent.attr("id");
-            var nameTable = parent.parents("table").attr("id");
             var items = [];
             items.push(parent.find("input[name='field-name']").val());
             items.push(parent.find("select[name='field-type']").val());
@@ -87,12 +79,12 @@ $(function () {
             var nameField = parent.attr("id");
             var nameTable = parent.parents("table").attr("id");
             var items = [];
-            items.push(parent.find("input[name='field-name']").val());
-            items.push(parent.find("select[name='field-type']").val());
-            items.push(parent.find("input[name='field-pk']").prop('checked'));
-            items.push(parent.find("input[name='field-null']").prop('checked'));
-            items.push(parent.find("input[name='field-unique']").prop('checked'));
-            items.push(parent.find("input[name='field-ai']").prop('checked'));
+            items.push(parent.find("input[name='field-name']").val(),
+                parent.find("select[name='field-type']").val(),
+                parent.find("input[name='field-pk']").prop('checked'),
+                parent.find("input[name='field-null']").prop('checked'),
+                parent.find("input[name='field-unique']").prop('checked'),
+                parent.find("input[name='field-ai']").prop('checked'));
             if (nameField !== undefined) {
                 editField(nameTable, nameField, items);
                 parent.attr("id", items[0]);
@@ -127,192 +119,160 @@ $(function () {
             parent.find(".name_table").text(newName);
             editTable(oldName, newName, newComment);
             parent.find(".cancel-edit-table").click();
+        })
+
+        .on("DOMNodeInserted", ".draggable", function () {
+            $(this).draggable({
+                stop: function () {
+                    updatePos($(this).attr("id"), $(this).offset().left, $(this).offset().top);
+                }
+            });
+            $("tbody").sortable({
+                handle: ".mover",
+                start: function (event, ui) {
+                    originalPosition = ui.item.index();
+                },
+                update: function (event, ui) {
+                    moveField(ui.item.parents("table").attr("id"), originalPosition, ui.item.index());
+                }
+            });
         });
 
+    loadDB();
+    createDB();
+
     function createDB() {
-        $.getJSON("db.json", function (data) {
-            for (var i in data) {
-                var html = $("#new-table").clone();
-                html.attr("id", data[i].name);
-                html.css("left", data[i].posX + "px");
-                html.css("top", data[i].posY + "px");
-                html.show();
-                html.find(".name_table").text(data[i].name);
-                for (var u in data[i]["fields"]) {
-                    html.find("tbody").append("<tr id=\"" + data[i]['fields'][u].text + "\">" +
-                        "        <td class=\"\"></td>\n" +
-                        "        <td>" + data[i]['fields'][u].text + "</td>\n" +
-                        "        <td>" + data[i]['fields'][u].type + "</td>\n" +
-                        "        <td class=\"rightmost\">\n" +
-                        "            <span class=\"edit-field\">E</span>\n" +
-                        "            <span class=\"mover\">M</span>\n" +
-                        "        </td></tr>");
-                }
-                html.appendTo("main");
-                $(".draggable").draggable({
-                    stop: function () {
-                        updatePos($(this).attr("id"), $(this).offset().left, $(this).offset().top);
-                    }
-                });
-                $("tbody").sortable({
-                    handle: ".mover",
-                    start: function (event, ui) {
-                        index = ui.item.index();
-                    },
-                    update: function (event, ui) {
-                        moveField(ui.item.parents("table").attr("id"), index, ui.item.index());
-                    }
-                });
+        for (var i in data) {
+            var html = $("#new-table").clone();
+            html.attr("id", data[i].name);
+            html.css("left", data[i].posX + "px");
+            html.css("top", data[i].posY + "px");
+            html.show();
+            html.find(".name_table").text(data[i].name);
+            for (var u in data[i]["fields"]) {
+                html.find("tbody").append("<tr id=\"" + data[i]['fields'][u].text + "\">" +
+                    "        <td class=\"\"></td>\n" +
+                    "        <td>" + data[i]['fields'][u].text + "</td>\n" +
+                    "        <td>" + data[i]['fields'][u].type + "</td>\n" +
+                    "        <td class=\"rightmost\">\n" +
+                    "            <span class=\"edit-field\">E</span>\n" +
+                    "            <span class=\"mover\">M</span>\n" +
+                    "        </td></tr>");
             }
-        });
+            html.appendTo("main");
+        }
     }
 
 
     function getField(nameTable, nameID, callback) {
-        $.getJSON("db.json", function (data) {
-            for (var i in data) {
-                if (data[i].name === nameTable) {
-                    for (var u in data[i]["fields"]) {
-                        if (data[i]['fields'][u].text === nameID) callback(data[i]['fields'][u]);
-                    }
-                }
-            }
-        });
+        var i = searchTable(nameTable);
+        for (var u in data[i]["fields"]) {
+            if (data[i]['fields'][u].text === nameID) callback(data[i]['fields'][u]);
+        }
+
     }
 
     function addField(nameTable, items) {
-        $.getJSON("db.json", function (data) {
-            for (var i in data) {
-                if (data[i].name === nameTable) {
-                    var obj = {
-                        text: items[0],
-                        type: items[1],
-                        pk: items[2],
-                        null: items[3],
-                        unique: items[4],
-                        ai: items[5]
-                    };
-                    data[i]['fields'].push(obj);
-                    fs.writeFileSync('db.json', JSON.stringify(data), 'utf-8');
-                }
-            }
-        });
+        var i = searchTable(nameTable);
+        var obj = {text: items[0], type: items[1], pk: items[2], null: items[3], unique: items[4], ai: items[5]};
+        data[i]['fields'].push(obj);
+        saveDB();
+
     }
 
     function editField(nameTable, nameField, items) {
-        $.getJSON("db.json", function (data) {
-            for (var i in data) {
-                if (data[i].name === nameTable) {
-                    for (var u in data[i]["fields"]) {
-                        if (data[i]['fields'][u].text === nameField) {
-                            console.log(items);
-                            data[i]['fields'][u].text = items[0];
-                            data[i]['fields'][u].type = items[1];
-                            data[i]['fields'][u].pk = items[2];
-                            data[i]['fields'][u].null = items[3];
-                            data[i]['fields'][u].unique = items[4];
-                            data[i]['fields'][u].ai = items[5];
-                            fs.writeFileSync('db.json', JSON.stringify(data), 'utf-8');
-                        }
-                    }
-                }
+        var i = searchTable(nameTable);
+        for (var u in data[i]["fields"]) {
+            if (data[i]['fields'][u].text === nameField) {
+                console.log(items);
+                data[i]['fields'][u].text = items[0];
+                data[i]['fields'][u].type = items[1];
+                data[i]['fields'][u].pk = items[2];
+                data[i]['fields'][u].null = items[3];
+                data[i]['fields'][u].unique = items[4];
+                data[i]['fields'][u].ai = items[5];
+                saveDB();
             }
-        });
+
+        }
     }
 
     function deleteField(nameTable, nameField) {
-        $.getJSON("db.json", function (data) {
-            for (var i in data) {
-                if (data[i].name === nameTable) {
-                    for (var u in data[i]["fields"]) {
-                        if (data[i]['fields'][u].text === nameField) {
-                            data[i]['fields'].splice(u, 1);
-                            fs.writeFileSync('db.json', JSON.stringify(data), 'utf-8');
-                        }
-                    }
-                }
+        var i = searchTable(nameTable);
+        for (var u in data[i]["fields"]) {
+            if (data[i]['fields'][u].text === nameField) {
+                data[i]['fields'].splice(u, 1);
+                saveDB();
             }
-        });
+
+        }
     }
 
     function moveField(nameTable, oldPosition, newPosition) {
-        if (oldPosition !== newPosition)
-            $.getJSON("db.json", function (data) {
-                for (var i in data) {
-                    if (data[i].name === nameTable) {
-                        var fields = data[i]["fields"];
-                        if (newPosition >= fields.length) {
-                            var k = newPosition - fields.length;
-                            while ((k--) + 1) {
-                                fields.push(undefined);
-                            }
-                        }
-                        fields.splice(newPosition, 0, fields.splice(oldPosition, 1)[0]);
-                        fs.writeFileSync('db.json', JSON.stringify(data), 'utf-8');
-                    }
+        if (oldPosition !== newPosition) {
+            var i = searchTable(nameTable);
+            var fields = data[i]["fields"];
+            if (newPosition >= fields.length) {
+                var k = newPosition - fields.length;
+                while ((k--) + 1) {
+                    fields.push(undefined);
                 }
-            });
+            }
+            fields.splice(newPosition, 0, fields.splice(oldPosition, 1)[0]);
+            saveDB();
+
+        }
     }
 
 
     function addTable(nameTable) {
-        $.getJSON("db.json", function (data) {
-            var obj = {
-                name: nameTable,
-                comment: "",
-                posX: 100,
-                posY: 100,
-                fields: []
-            };
-            data.push(obj);
-            fs.writeFileSync('db.json', JSON.stringify(data), 'utf-8');
-        });
+        var obj = {name: nameTable, comment: "", posX: 100, posY: 100, fields: []};
+        data.push(obj);
+        saveDB();
     }
 
     function editTable(nameTable, newName, newComment) {
-        $.getJSON("db.json", function (data) {
-            for (var i in data) {
-                if (data[i].name === nameTable) {
-                    data[i].name = newName;
-                    data[i].comment = newComment;
-                    fs.writeFileSync('db.json', JSON.stringify(data), 'utf-8');
-                }
-            }
-        });
+        var i = searchTable(nameTable);
+        data[i].name = newName;
+        data[i].comment = newComment;
+        saveDB();
     }
 
     function deleteTable(nameTable) {
-        $.getJSON("db.json", function (data) {
-            for (var i in data) {
-                if (data[i].name === nameTable) {
-                    data.splice(i, 1);
-                    fs.writeFileSync('db.json', JSON.stringify(data), 'utf-8');
-                }
-            }
-        });
+        var i = searchTable(nameTable);
+        data.splice(i, 1);
+        saveDB();
     }
 
     function updatePos(nameTable, posX, posY) {
-        $.getJSON("db.json", function (data) {
-            for (var i in data) {
-                if (data[i].name === nameTable) {
-                    data[i].posX = posX;
-                    data[i].posY = posY;
-                    fs.writeFileSync('db.json', JSON.stringify(data), 'utf-8');
-                }
-            }
-        });
+        var i = searchTable(nameTable);
+        data[i].posX = posX;
+        data[i].posY = posY;
+        saveDB();
+
     }
 
     function genrateSQL() {
+
     }
 
     function loadDB() {
         $.ajaxSetup({async: false});
-        $.getJSON("db.json", {}, function (data) {
-            data = this.data;
+        $.getJSON("db.json", {}, function (result) {
+            data = result;
         });
     }
 
+    function saveDB() {
+        fs.writeFileSync('db.json', JSON.stringify(data));
+    }
+
+    function searchTable(nameTable) {
+        for (var i in data) {
+            if (data[i].name === nameTable) {
+                return i;
+            }
+        }
+    }
 
 });
