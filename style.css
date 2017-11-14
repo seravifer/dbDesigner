@@ -1,0 +1,149 @@
+.entity-table {
+    font-family: 'source_sans_proregular', sans-serif;
+    font-size: 13px;
+    background-color: #eee;
+    min-width: 200px;
+    position: absolute;
+    border-collapse: collapse;
+    border: 1px solid #444444;
+    border-spacing: 0;
+    -webkit-box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.5);
+    -moz-box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.5)
+}
+
+.entity-table thead tr.caption {
+    font-weight: bold;
+    text-align: left;
+    background-color: #dadada;
+    cursor: move;
+    color: #333333
+}
+
+.entity-table thead th {
+    border-bottom: 1px solid #000;
+    padding: 10px;
+    text-align: left;
+}
+
+.entity-table td {
+    border-bottom: 1px solid #000;
+    border-right: 1px solid #000;
+    background-color: #f8f8f8;
+    padding: 4px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.entity-table td img.mover {
+    cursor: ns-resize
+}
+
+.entity-table td.not-null img, .entity-table td.fk-field img, .entity-table td.pk-field img {
+    vertical-align: bottom;
+    margin-right: 2px
+}
+
+.entity-table tfoot {
+    -webkit-transition: all 0.2s ease-out;
+    -moz-transition: all 0.2s ease-out;
+    -o-transition: all 0.2s ease-out;
+    transition: all 0.2s ease-out
+}
+
+.entity-table tfoot td {
+    padding: 0px;
+    border-right-width: 0px
+}
+
+.entity-table tfoot div.operations {
+    padding: 3px
+}
+
+.entity-table tfoot div.insert-panel {
+    display: none;
+    background-color: #eee
+}
+
+.entity-table tfoot span.insert-field {
+    margin-right: 5px
+}
+
+.entity-table tr.edit-table th, .entity-table div.edit-panel, .entity-table div.insert-panel {
+    position: relative;
+    padding: 3px;
+    width: 250px
+}
+
+.entity-table tr.edit-table th label, .entity-table div.edit-panel label, .entity-table div.insert-panel label {
+    display: inline-block;
+    text-align: right;
+    width: 100px;
+    color: #333;
+    vertical-align: middle;
+    white-space: normal;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none
+}
+
+.entity-table tr.edit-table th label.cb-label, .entity-table div.edit-panel label.cb-label, .entity-table div.insert-panel label.cb-label {
+    text-align: left;
+    width: auto;
+    margin-left: 100px
+}
+
+.entity-table tr.edit-table th input, .entity-table div.edit-panel input, .entity-table div.insert-panel input {
+    width: 130px;
+    margin-bottom: 2px
+}
+
+.entity-table tr.edit-table th input.checkbox, .entity-table div.edit-panel input.checkbox, .entity-table div.insert-panel input.checkbox {
+    width: auto
+}
+
+.entity-table tr.edit-table th select, .entity-table tr.edit-table th textarea, .entity-table div.edit-panel select, .entity-table div.edit-panel textarea, .entity-table div.insert-panel select, .entity-table div.insert-panel textarea {
+    width: 130px;
+    margin-bottom: 2px;
+    vertical-align: middle
+}
+
+.entity-table tr.edit-table th .btn, .entity-table div.edit-panel .btn, .entity-table div.insert-panel .btn {
+    width: auto;
+    border: 1px solid #999999;
+    background-color: #cfcfcf
+}
+
+.entity-table tr.edit-table th .btn:hover, .entity-table div.edit-panel .btn:hover, .entity-table div.insert-panel .btn:hover {
+    background-color: #dfdfdf
+}
+
+.entity-table tr.edit-table th .danger, .entity-table div.edit-panel .danger, .entity-table div.insert-panel .danger {
+    position: absolute;
+    right: 5px;
+    bottom: 7px
+}
+
+.entity-table div.edit-panel {
+    border-right-width: 0px;
+    background-color: #f8f7ef
+}
+
+.entity-table div.edit-panel div.refs {
+    display: none
+}
+
+.entity-table.selected {
+    outline: 3px dotted #3498DB
+}
+
+.entity-table .action {
+    cursor: pointer;
+}
+
+#new-table {
+    display: none;
+}

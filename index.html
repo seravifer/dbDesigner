@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>dbDesigner</title>
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script src="assets\jquery-3.2.1.min.js"></script>
+    <script src="assets\jquery-ui.draggable.min.js"></script>
+    <script src="content.js"></script>
+    <script>if (window.module) module = window.module;</script>
+    <link rel="stylesheet" href="assets\jquery-ui.draggable.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <button id="addTable">Add</button>
+</header>
+
+<main>
+
+</main>
+
+<table class="entity-table draggable" id="new-table">
+    <thead>
+    <tr>
+        <th colspan="4">
+            <div class="caption" style="display: table-row;">
+                <span class="name_table"></span>
+                <span class="edit-table">Edit</span>
+            </div>
+            <div class="edit-table-section" style="display: none;">
+
+                <label>Table Name</label>
+                <input type="text" name="table-name">
+                <br>
+                <label>Table Comment</label>
+                <textarea rows="4"></textarea>
+                <br>
+                <span class="save-edit-table">Save</span>
+                <span class="cancel-edit-table">Cancel</span>
+                <span class="delete-table">Delete</span>
+            </div>
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+    <tfoot>
+
+    <tr>
+        <td colspan="4">
+            <div class="operations" style="display: block;">
+                <span class="insert-field">Add field</span>
+            </div>
+            <div class="changes" style="display: none;">
+                <label>Name</label>
+                <input type="text" name="field-name">
+                <br>
+                <label>Type</label>
+                <select name="field-type">
+                    <option value="binary">binary</option>
+                    <option value="blob">blob</option>
+                    <option value="boolean">boolean</option>
+                    <option value="date">date</option>
+                    <option value="datetime">datetime</option>
+                    <option value="decimal">decimal</option>
+                    <option value="float">float</option>
+                    <option value="integer">integer</option>
+                    <option value="string">string</option>
+                    <option value="text">text</option>
+                    <option value="time">time</option>
+                    <option value="timestamp">timestamp</option>
+                    <option value="varchar">varchar</option>
+                </select>
+                <br>
+                <label>Size</label>
+                <input type="text" name="field-size">
+                <br>
+                <label>Default</label>
+                <input type="text" name="field-default">
+                <br>
+                <label class="cb-label">
+                    <input type="checkbox" name="field-pk" class="checkbox field-pk"><span>Primary Key</span>
+                </label>
+                <br>
+                <label>
+                    <input type="checkbox" name="field-null" class="checkbox field-null"><span>Allow nulls</span>
+                </label>
+                <br>
+                <label>
+                    <input type="checkbox" name="field-unique" class="checkbox field-unique"><span>Unique</span>
+                </label>
+                <br>
+                <label>
+                    <input type="checkbox" name="field-ai" class="checkbox field-ai"><span>Auto Increment</span>
+                </label>
+                <br>
+                <span class="save-insert">Save</span>
+                <span class="cancel-insert">Cancel</span>
+            </div>
+        </td>
+    </tr>
+    </tfoot>
+</table>
+
+</body>
+</html>
