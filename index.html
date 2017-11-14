@@ -5,16 +5,17 @@
     <title>dbDesigner</title>
     <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
     <script src="assets\jquery-3.2.1.min.js"></script>
-    <script src="assets\jquery-ui.draggable.min.js"></script>
+    <script src="assets\jquery-ui.min.js"></script>
     <script src="content.js"></script>
     <script>if (window.module) module = window.module;</script>
-    <link rel="stylesheet" href="assets\jquery-ui.draggable.min.css">
+    <link rel="stylesheet" href="assets\jquery-ui.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
     <button id="addTable">Add</button>
+    <button id="generateSQL">Generate SQL</button>
 </header>
 
 <main>
@@ -30,12 +31,11 @@
                 <span class="edit-table">Edit</span>
             </div>
             <div class="edit-table-section" style="display: none;">
-
                 <label>Table Name</label>
                 <input type="text" name="table-name">
                 <br>
                 <label>Table Comment</label>
-                <textarea rows="4"></textarea>
+                <textarea rows="4" name="table-comment"></textarea>
                 <br>
                 <span class="save-edit-table">Save</span>
                 <span class="cancel-edit-table">Cancel</span>
@@ -82,19 +82,19 @@
                 <input type="text" name="field-default">
                 <br>
                 <label class="cb-label">
-                    <input type="checkbox" name="field-pk" class="checkbox field-pk"><span>Primary Key</span>
+                    <input type="checkbox" name="field-pk"><span>Primary Key</span>
                 </label>
                 <br>
                 <label>
-                    <input type="checkbox" name="field-null" class="checkbox field-null"><span>Allow nulls</span>
+                    <input type="checkbox" name="field-null"><span>Allow nulls</span>
                 </label>
                 <br>
                 <label>
-                    <input type="checkbox" name="field-unique" class="checkbox field-unique"><span>Unique</span>
+                    <input type="checkbox" name="field-unique"><span>Unique</span>
                 </label>
                 <br>
                 <label>
-                    <input type="checkbox" name="field-ai" class="checkbox field-ai"><span>Auto Increment</span>
+                    <input type="checkbox" name="field-ai"><span>Auto Increment</span>
                 </label>
                 <br>
                 <span class="save-insert">Save</span>

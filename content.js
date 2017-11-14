@@ -1,6 +1,9 @@
 var fs = require('fs');
 $(function () {
+    var index;
+    var data;
     createDB();
+    loadDB();
 
     $("#addTable").on("click", function () {
         var html = $("#new-table").clone();
@@ -21,6 +24,27 @@ $(function () {
             $(this).parent().prev().show();
         })
 
+        .on("click", ".cancel-field", function () {
+            var parent = $(this).parents("tr").eq(0);
+            var nameField = parent.attr("id");
+            var nameTable = parent.parents("table").attr("id");
+            var items = [];
+            items.push(parent.find("input[name='field-name']").val());
+            items.push(parent.find("select[name='field-type']").val());
+            items.push(parent.find("input[name='field-pk']").prop('checked'));
+            items.push(parent.find("input[name='field-null']").prop('checked'));
+            items.push(parent.find("input[name='field-unique']").prop('checked'));
+            items.push(parent.find("input[name='field-ai']").prop('checked'));
+            parent.attr("id", items[0]);
+            parent.html("        <td class=\"\"></td>\n" +
+                "        <td>" + items[0] + "</td>\n" +
+                "        <td>" + items[1] + "</td>\n" +
+                "        <td class=\"rightmost\">\n" +
+                "            <span class=\"edit-field\">E</span>\n" +
+                "            <span class=\"mover\">M</span>\n" +
+                "        </td>");
+        })
+
         .on("click", ".insert-field, .edit-table", function () {
             $(this).parent().hide();
             $(this).parent().next().show();
@@ -39,6 +63,7 @@ $(function () {
             var nameTable = parent.parents("table").attr("id");
             getField(nameTable, nameField, function (data) {
                 html.append("<span class=\"delete-field\">Delete</span>");
+                html.find(".cancel-insert").removeClass("cancel-insert").addClass("cancel-field");
                 html.find("input[name='field-name']").attr("value", data.text);
                 html.find("select[name='field-type'] option[value='" + data.type + "']").attr("selected", "selected");
                 html.find("input[name='field-pk']").attr('checked', data.pk);
@@ -91,6 +116,17 @@ $(function () {
                 addField(nameTable, items);
             }
 
+        })
+
+        .on("click", ".save-edit-table", function () {
+            var parent = $(this).parent();
+            var oldName = $(this).parents("table").attr("id");
+            var newName = parent.find("input[name='table-name']").val();
+            var newComment = parent.find("textarea[name='table-comment']").val();
+            $(this).parents("table").attr("id", newName);
+            parent.find(".name_table").text(newName);
+            editTable(oldName, newName, newComment);
+            parent.find(".cancel-edit-table").click();
         });
 
     function createDB() {
@@ -116,6 +152,15 @@ $(function () {
                 $(".draggable").draggable({
                     stop: function () {
                         updatePos($(this).attr("id"), $(this).offset().left, $(this).offset().top);
+                    }
+                });
+                $("tbody").sortable({
+                    handle: ".mover",
+                    start: function (event, ui) {
+                        index = ui.item.index();
+                    },
+                    update: function (event, ui) {
+                        moveField(ui.item.parents("table").attr("id"), index, ui.item.index());
                     }
                 });
             }
@@ -190,6 +235,25 @@ $(function () {
         });
     }
 
+    function moveField(nameTable, oldPosition, newPosition) {
+        if (oldPosition !== newPosition)
+            $.getJSON("db.json", function (data) {
+                for (var i in data) {
+                    if (data[i].name === nameTable) {
+                        var fields = data[i]["fields"];
+                        if (newPosition >= fields.length) {
+                            var k = newPosition - fields.length;
+                            while ((k--) + 1) {
+                                fields.push(undefined);
+                            }
+                        }
+                        fields.splice(newPosition, 0, fields.splice(oldPosition, 1)[0]);
+                        fs.writeFileSync('db.json', JSON.stringify(data), 'utf-8');
+                    }
+                }
+            });
+    }
+
 
     function addTable(nameTable) {
         $.getJSON("db.json", function (data) {
@@ -243,16 +307,12 @@ $(function () {
     function genrateSQL() {
     }
 
-    /*$.ajaxSetup({
-        async: false
-    });
-    function loadJson() {
-        var result;
-        $.getJSON("db.json", {}, function(data){
-            result = data;
+    function loadDB() {
+        $.ajaxSetup({async: false});
+        $.getJSON("db.json", {}, function (data) {
+            data = this.data;
         });
-        return result;
-    }*/
+    }
 
 
 });
