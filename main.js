@@ -1,4 +1,4 @@
-const {app, BrowserWindow} = require('electron');
+const {app, BrowserWindow, Menu} = require('electron');
 const path = require('path');
 const url = require('url');
 
@@ -27,6 +27,98 @@ function createWindow() {
         // when you should delete the corresponding element.
         win = null
     })
+
+    const template = [
+        {
+            label: 'File',
+            submenu: [
+                {label: 'New', click() {win.webContents.send('menuActions', 'new')}, accelerator: "CmdOrCtrl+N"},
+                {label: 'Open', click() {win.webContents.send('menuActions', 'open')}, accelerator: "CmdOrCtrl+O"},
+                {label: 'Save', click() {win.webContents.send('menuActions', 'save')}, accelerator: "CmdOrCtrl+S"},
+                {role: 'close'}
+            ]
+        },
+        {
+            label: 'Edit',
+            submenu: [
+                {label: 'Add table', click() {win.webContents.send('menuActions', 'newTable')}, accelerator: "CmdOrCtrl+T"},
+                {role: 'undo'},
+                {role: 'redo'},
+                {type: 'separator'},
+                {role: 'cut'},
+                {role: 'copy'},
+                {role: 'paste'}
+            ]
+        },
+        {
+            label: 'View',
+            submenu: [
+                {role: 'reload'},
+                {role: 'forcereload'},
+                {role: 'toggledevtools'},
+                {type: 'separator'},
+                {role: 'resetzoom'},
+                {role: 'zoomin'},
+                {role: 'zoomout'},
+                {type: 'separator'},
+                {role: 'togglefullscreen'}
+            ]
+        },
+        {
+            role: 'help',
+            submenu: [
+                {
+                    label: 'About',
+                    click () { require('electron').shell.openExternal('') }
+                }
+            ]
+        },
+        {
+            label: "Export",
+            click() {win.webContents.send('menuActions', 'export')}, accelerator: "CmdOrCtrl+Q"
+        }
+    ]
+    /*
+    if (process.platform === 'darwin') {
+        template.unshift({
+            label: app.getName(),
+            submenu: [
+                {role: 'about'},
+                {type: 'separator'},
+                {role: 'services', submenu: []},
+                {type: 'separator'},
+                {role: 'hide'},
+                {role: 'hideothers'},
+                {role: 'unhide'},
+                {type: 'separator'},
+                {role: 'quit'}
+            ]
+        })
+
+        // Edit menu
+        template[1].submenu.push(
+            {type: 'separator'},
+            {
+                label: 'Speech',
+                submenu: [
+                    {role: 'startspeaking'},
+                    {role: 'stopspeaking'}
+                ]
+            }
+        )
+
+        // Window menu
+        template[3].submenu = [
+            {role: 'close'},
+            {role: 'minimize'},
+            {role: 'zoom'},
+            {type: 'separator'},
+            {role: 'front'}
+        ]
+    }
+    */
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
 }
 
 // This method will be called when Electron has finished
@@ -50,6 +142,3 @@ app.on('activate', () => {
         createWindow()
     }
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

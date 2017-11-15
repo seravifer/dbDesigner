@@ -2,8 +2,8 @@
     {
         "name": "Empleado",
         "comment": "",
-        "posX": 202,
-        "posY": 72,
+        "posX": 108,
+        "posY": 42,
         "fields": [
             {
                 "text": "empleado_id",
@@ -13,7 +13,8 @@
                 "pk": true,
                 "null": true,
                 "unique": true,
-                "ai": true
+                "ai": true,
+                "foreign": []
             },
             {
                 "text": "firstName",
@@ -23,7 +24,11 @@
                 "pk": false,
                 "null": false,
                 "unique": true,
-                "ai": false
+                "ai": false,
+                "foreign": [
+                    "Ford",
+                    "BMW"
+                ]
             },
             {
                 "text": "lastName",
@@ -33,25 +38,16 @@
                 "pk": false,
                 "null": false,
                 "unique": false,
-                "ai": false
-            },
-            {
-                "text": "company_fk",
-                "type": "integer",
-                "size": 10,
-                "default": "default",
-                "pk": false,
-                "null": false,
-                "unique": false,
-                "ai": false
+                "ai": false,
+                "foreign": []
             }
         ]
     },
     {
         "name": "Cliente",
         "comment": "",
-        "posX": 145,
-        "posY": 328,
+        "posX": 78,
+        "posY": 376,
         "fields": [
             {
                 "text": "id",
@@ -61,7 +57,8 @@
                 "pk": true,
                 "null": true,
                 "unique": false,
-                "ai": true
+                "ai": true,
+                "foreign": []
             },
             {
                 "text": "firstName",
@@ -71,7 +68,8 @@
                 "pk": false,
                 "null": false,
                 "unique": false,
-                "ai": false
+                "ai": false,
+                "foreign": []
             }
         ]
     }

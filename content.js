@@ -1,8 +1,32 @@
 var fs = require('fs');
+var electron = require('electron').ipcRenderer;
+const {dialog} = require('electron').remote;
 
 $(function () {
-    var originalPosition;
+    var originPosition;
     var data;
+
+    electron.on('menuActions', (event, message) => {
+        switch (message) {
+            case "new":
+                break;
+            case "open":
+                loadDB(dialog.showOpenDialog({
+                    properties: ['openFile'],
+                    filters: [{name: 'Database', extensions: ['json']}]
+                }));
+                break;
+            case "save":
+                saveDB();
+                break;
+            case "newTable":
+                addTable("table");
+                break;
+            case "export":
+                genrateSQL();
+                break;
+        }
+    });
 
     $("#addTable").on("click", function () {
         var html = $("#new-table").clone();
@@ -48,7 +72,7 @@ $(function () {
             if (items[7] === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
             parent.html("        <td>" + desc + "</td>\n" +
                 "        <td>" + items[0] + "</td>\n" +
-                "        <td>" + items[1]+ "</td>\n" +
+                "        <td>" + items[1] + "</td>\n" +
                 "        <td class='rightmost'>\n" +
                 "            <i class='mdi mdi-pencil edit-field'></i>\n" +
                 "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
@@ -61,7 +85,7 @@ $(function () {
             var nameField = parent.attr("id");
             var nameTable = parent.parents("table").attr("id");
             var result = getField(nameTable, nameField);
-            html.append("<span class='delete-field'><i class='mdi mdi-cancel'></i>Delete</span>");
+            html.append("<span class='action delete-field'><i class='mdi mdi-delete'></i>Delete</span>");
             html.find(".cancel-insert").removeClass("cancel-insert").addClass("cancel-field");
             html.find("input[name='field-name']").attr("value", result.text);
             html.find("select[name='field-type'] option[value='" + result.type + "']").attr("selected", "selected");
@@ -71,6 +95,8 @@ $(function () {
             html.find("input[name='field-null']").attr("checked", result.null);
             html.find("input[name='field-unique']").attr("checked", result.unique);
             html.find("input[name='field-ai']").attr("checked", result.ai);
+            var fk = result.foreign.length > 0;
+            html.find("input[name='field-fk']").attr("checked", fk);
             parent.html("<td colspan=\"4\">" + html.html() + "</td>");
         })
 
@@ -95,18 +121,18 @@ $(function () {
                 parent.find("input[name='field-null']").prop("checked"),
                 parent.find("input[name='field-unique']").prop("checked"),
                 parent.find("input[name='field-ai']").prop("checked"));
-                var desc = "";
-                if (items[4] === true) desc += "<i class='mdi mdi-key-variant' title='Primary key'></i>";
-                if (items[5] === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
-                if (items[6] === true) desc += "<i class='mdi mdi-key-variant' title='Unique'></i>";
-                if (items[7] === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
-                var html = "        <td>" + desc + "</td>\n" +
-                    "        <td>" + items[0] + "</td>\n" +
-                    "        <td>" + items[1]+ "</td>\n" +
-                    "        <td class='rightmost'>\n" +
-                    "            <i class='mdi mdi-pencil edit-field'></i>\n" +
-                    "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
-                    "        </td>";
+            var desc = "";
+            if (items[4] === true) desc += "<i class='mdi mdi-key-variant' title='Primary key'></i>";
+            if (items[5] === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
+            if (items[6] === true) desc += "<i class='mdi mdi-key-variant' title='Unique'></i>";
+            if (items[7] === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
+            var html = "        <td>" + desc + "</td>\n" +
+                "        <td>" + items[0] + "</td>\n" +
+                "        <td>" + items[1] + "</td>\n" +
+                "        <td class='rightmost'>\n" +
+                "            <i class='mdi mdi-pencil edit-field'></i>\n" +
+                "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
+                "        </td>";
             if (nameField !== undefined) {
                 editField(nameTable, nameField, items);
                 parent.attr("id", items[0]);
@@ -140,16 +166,27 @@ $(function () {
             $("tbody").sortable({
                 handle: ".move-field",
                 start: function (event, ui) {
-                    originalPosition = ui.item.index();
+                    originPosition = ui.item.index();
                 },
                 update: function (event, ui) {
-                    moveField(ui.item.parents("table").attr("id"), originalPosition, ui.item.index());
+                    moveField(ui.item.parents("table").attr("id"), originPosition, ui.item.index());
                 }
             });
+        })
+
+        .on("click", "input[name='field-pk']", function () {
+            var parent = $(this).parents("td").eq(0);
+            if ($(this).is(":checked")) {
+                parent.find("input[name='field-null']").prop("disabled", true).prop("checked", false);
+                parent.find("input[name='field-unique']").prop("disabled", true).prop("checked", false);
+                parent.find("input[name='field-ai']").prop("checked");
+            } else {
+                parent.find("input[name='field-null']").prop("disabled", false);
+                parent.find("input[name='field-unique']").prop("disabled", false);
+            }
         });
 
-    loadDB();
-    createDB();
+    loadDB("db.json");
 
     function createDB() {
         for (var i in data) {
@@ -264,12 +301,15 @@ $(function () {
 
     }
 
-    function loadDB() {
+    function loadDB(pathDB) {
+        data = "";
+        $("main").empty();
         $.ajaxSetup({async: false});
-        $.getJSON("db.json", {}, function (result) {
+        $.getJSON(pathDB, {}, function (result) {
             data = result;
         });
-        //$.ajaxSetup({async: true});
+        $.ajaxSetup({async: true});
+        createDB();
     }
 
     function saveDB() {
