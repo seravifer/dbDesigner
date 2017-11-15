@@ -39,9 +39,10 @@ main {
     vertical-align: middle;
 }
 
-.entity-table tfoot {
-    -webkit-transition: all 0.2s ease-out;
-    -moz-transition: all 0.2s ease-out;
-    -o-transition: all 0.2s ease-out;
-    transition: all 0.2s ease-out
+.move-field {
+    cursor: move;
+}
+
+.mdi-pencil, .insert-field, .action {
+    cursor: pointer;
 }

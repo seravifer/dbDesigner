@@ -3,13 +3,14 @@
 <head>
     <meta charset="utf-8">
     <title>dbDesigner</title>
-    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
-    <script src="assets\jquery-3.2.1.min.js"></script>
-    <script src="assets\jquery-ui.custom.min.js"></script>
+    <script>if (typeof module === 'object') {window.module = module;module = undefined;}</script>
+    <script src="assets/jquery-3.2.1.min.js"></script>
+    <script src="assets/jquery-ui.custom.min.js"></script>
     <script src="content.js"></script>
     <script>if (window.module) module = window.module;</script>
-    <link rel="stylesheet" href="assets\jquery-ui.custom.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" type="text/css" href="assets/jquery-ui.custom.min.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/materialdesignicons.min.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
 
@@ -18,9 +19,7 @@
     <button id="generateSQL">Generate SQL</button>
 </header>
 
-<main>
-
-</main>
+<main></main>
 
 <table class="entity-table draggable" id="new-table">
     <thead>
@@ -28,7 +27,7 @@
         <th colspan="4">
             <div class="caption" style="display: table-row;">
                 <span class="name_table"></span>
-                <span class="edit-table">Edit</span>
+                <i class='mdi mdi-pencil edit-table'></i>
             </div>
             <div class="edit-table-section" style="display: none;">
                 <label>Table Name</label>
@@ -37,22 +36,21 @@
                 <label>Table Comment</label>
                 <textarea rows="4" name="table-comment"></textarea>
                 <br>
-                <span class="save-edit-table">Save</span>
-                <span class="cancel-edit-table">Cancel</span>
-                <span class="delete-table">Delete</span>
+                <span class="action save-table"><i class='mdi mdi-check-circle'></i>Save</span>
+                <span class="action cancel-table"><i class='mdi mdi-cancel'></i>Cancel</span>
+                <span class="action delete-table"><i class='mdi mdi-delete'></i>Delete</span>
             </div>
         </th>
     </tr>
     </thead>
-    <tbody>
 
-    </tbody>
+    <tbody></tbody>
+
     <tfoot>
-
     <tr>
         <td colspan="4">
             <div class="operations" style="display: block;">
-                <span class="insert-field">Add field</span>
+                <span class="insert-field"><i class='mdi mdi-plus-circle'></i>Add field</span>
             </div>
             <div class="changes" style="display: none;">
                 <label>Name</label>
@@ -81,7 +79,7 @@
                 <label>Default</label>
                 <input type="text" name="field-default">
                 <br>
-                <label class="cb-label">
+                <label>
                     <input type="checkbox" name="field-pk"><span>Primary Key</span>
                 </label>
                 <br>
@@ -97,8 +95,8 @@
                     <input type="checkbox" name="field-ai"><span>Auto Increment</span>
                 </label>
                 <br>
-                <span class="save-insert">Save</span>
-                <span class="cancel-insert">Cancel</span>
+                <span class="action save-insert"><i class='mdi mdi-check-circle'></i>Save</span>
+                <span class="action cancel-insert"><i class='mdi mdi-cancel'></i>Cancel</span>
             </div>
         </td>
     </tr>

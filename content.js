@@ -13,28 +13,9 @@ $(function () {
     });
 
     $("main")
-        .on("click", ".cancel-insert, .cancel-edit-table", function () {
+        .on("click", ".cancel-insert, .cancel-table", function () {
             $(this).parent().hide();
             $(this).parent().prev().show();
-        })
-
-        .on("click", ".cancel-field", function () {
-            var parent = $(this).parents("tr").eq(0);
-            var items = [];
-            items.push(parent.find("input[name='field-name']").val());
-            items.push(parent.find("select[name='field-type']").val());
-            items.push(parent.find("input[name='field-pk']").prop('checked'));
-            items.push(parent.find("input[name='field-null']").prop('checked'));
-            items.push(parent.find("input[name='field-unique']").prop('checked'));
-            items.push(parent.find("input[name='field-ai']").prop('checked'));
-            parent.attr("id", items[0]);
-            parent.html("        <td class=\"\"></td>\n" +
-                "        <td>" + items[0] + "</td>\n" +
-                "        <td>" + items[1] + "</td>\n" +
-                "        <td class=\"rightmost\">\n" +
-                "            <span class=\"edit-field\">E</span>\n" +
-                "            <span class=\"mover\">M</span>\n" +
-                "        </td>");
         })
 
         .on("click", ".insert-field, .edit-table", function () {
@@ -48,22 +29,49 @@ $(function () {
             $(this).parents("table").remove();
         })
 
+        .on("click", ".cancel-field", function () {
+            var parent = $(this).parents("tr").eq(0);
+            var items = [];
+            items.push(parent.find("input[name='field-name']").val(),
+                parent.find("select[name='field-type']").val(),
+                parent.find("input[name='field-size']").val(),
+                parent.find("input[name='field-default']").val(),
+                parent.find("input[name='field-pk']").prop("checked"),
+                parent.find("input[name='field-null']").prop("checked"),
+                parent.find("input[name='field-unique']").prop("checked"),
+                parent.find("input[name='field-ai']").prop("checked"));
+            parent.attr("id", items[0]);
+            var desc = "";
+            if (items[4] === true) desc += "<i class='mdi mdi-key-variant' title='Primary key'></i>";
+            if (items[5] === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
+            if (items[6] === true) desc += "<i class='mdi mdi-key-variant' title='Unique'></i>";
+            if (items[7] === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
+            parent.html("        <td>" + desc + "</td>\n" +
+                "        <td>" + items[0] + "</td>\n" +
+                "        <td>" + items[1]+ "</td>\n" +
+                "        <td class='rightmost'>\n" +
+                "            <i class='mdi mdi-pencil edit-field'></i>\n" +
+                "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
+                "        </td>");
+        })
+
         .on("click", ".edit-field", function () {
             var parent = $(this).parents("tr").eq(0);
-            var html = $("#new-table .changes").clone();
+            var html = $("#new-table").find(".changes").clone();
             var nameField = parent.attr("id");
             var nameTable = parent.parents("table").attr("id");
-            getField(nameTable, nameField, function (data) {
-                html.append("<span class=\"delete-field\">Delete</span>");
-                html.find(".cancel-insert").removeClass("cancel-insert").addClass("cancel-field");
-                html.find("input[name='field-name']").attr("value", data.text);
-                html.find("select[name='field-type'] option[value='" + data.type + "']").attr("selected", "selected");
-                html.find("input[name='field-pk']").attr('checked', data.pk);
-                html.find("input[name='field-null']").attr('checked', data.null);
-                html.find("input[name='field-unique']").attr('checked', data.unique);
-                html.find("input[name='field-ai']").attr('checked', data.ai);
-                parent.html("<td colspan=\"4\">" + html.html() + "</td>");
-            });
+            var result = getField(nameTable, nameField);
+            html.append("<span class='delete-field'><i class='mdi mdi-cancel'></i>Delete</span>");
+            html.find(".cancel-insert").removeClass("cancel-insert").addClass("cancel-field");
+            html.find("input[name='field-name']").attr("value", result.text);
+            html.find("select[name='field-type'] option[value='" + result.type + "']").attr("selected", "selected");
+            html.find("input[name='field-size']").attr("value", result.size);
+            html.find("input[name='field-default']").attr("value", result.default);
+            html.find("input[name='field-pk']").attr("checked", result.pk);
+            html.find("input[name='field-null']").attr("checked", result.null);
+            html.find("input[name='field-unique']").attr("checked", result.unique);
+            html.find("input[name='field-ai']").attr("checked", result.ai);
+            parent.html("<td colspan=\"4\">" + html.html() + "</td>");
         })
 
         .on("click", ".delete-field", function () {
@@ -81,36 +89,37 @@ $(function () {
             var items = [];
             items.push(parent.find("input[name='field-name']").val(),
                 parent.find("select[name='field-type']").val(),
-                parent.find("input[name='field-pk']").prop('checked'),
-                parent.find("input[name='field-null']").prop('checked'),
-                parent.find("input[name='field-unique']").prop('checked'),
-                parent.find("input[name='field-ai']").prop('checked'));
+                parent.find("input[name='field-size']").val(),
+                parent.find("input[name='field-default']").val(),
+                parent.find("input[name='field-pk']").prop("checked"),
+                parent.find("input[name='field-null']").prop("checked"),
+                parent.find("input[name='field-unique']").prop("checked"),
+                parent.find("input[name='field-ai']").prop("checked"));
+                var desc = "";
+                if (items[4] === true) desc += "<i class='mdi mdi-key-variant' title='Primary key'></i>";
+                if (items[5] === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
+                if (items[6] === true) desc += "<i class='mdi mdi-key-variant' title='Unique'></i>";
+                if (items[7] === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
+                var html = "        <td>" + desc + "</td>\n" +
+                    "        <td>" + items[0] + "</td>\n" +
+                    "        <td>" + items[1]+ "</td>\n" +
+                    "        <td class='rightmost'>\n" +
+                    "            <i class='mdi mdi-pencil edit-field'></i>\n" +
+                    "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
+                    "        </td>";
             if (nameField !== undefined) {
                 editField(nameTable, nameField, items);
                 parent.attr("id", items[0]);
-                parent.html("        <td class=\"\"></td>\n" +
-                    "        <td>" + items[0] + "</td>\n" +
-                    "        <td>" + items[1] + "</td>\n" +
-                    "        <td class=\"rightmost\">\n" +
-                    "            <span class=\"edit-field\">E</span>\n" +
-                    "            <span class=\"mover\">M</span>\n" +
-                    "        </td>");
+                parent.html(html);
             } else {
-                parent.parents("table").find("tbody").append("<tr id=\"" + items[0] + "\">" +
-                    "        <td class=\"\"></td>\n" +
-                    "        <td>" + items[0] + "</td>\n" +
-                    "        <td>" + items[1] + "</td>\n" +
-                    "        <td class=\"rightmost\">\n" +
-                    "            <span class=\"edit-field\">E</span>\n" +
-                    "            <span class=\"mover\">M</span>\n" +
-                    "        </td></tr>");
+                parent.parents("table").find("tbody").append("<tr id='" + items[0] + "'>" + html + "</tr>"); //.unwrap
                 $(this).next().click();
                 addField(nameTable, items);
             }
 
         })
 
-        .on("click", ".save-edit-table", function () {
+        .on("click", ".save-table", function () {
             var parent = $(this).parent();
             var oldName = $(this).parents("table").attr("id");
             var newName = parent.find("input[name='table-name']").val();
@@ -123,12 +132,13 @@ $(function () {
 
         .on("DOMNodeInserted", ".draggable", function () {
             $(this).draggable({
+                cursor: "move",
                 stop: function () {
                     updatePos($(this).attr("id"), $(this).offset().left, $(this).offset().top);
                 }
             });
             $("tbody").sortable({
-                handle: ".mover",
+                handle: ".move-field",
                 start: function (event, ui) {
                     originalPosition = ui.item.index();
                 },
@@ -150,13 +160,18 @@ $(function () {
             html.show();
             html.find(".name_table").text(data[i].name);
             for (var u in data[i]["fields"]) {
-                html.find("tbody").append("<tr id=\"" + data[i]['fields'][u].text + "\">" +
-                    "        <td class=\"\"></td>\n" +
+                var desc = "";
+                if (data[i]['fields'][u].pk === true) desc += "<i class='mdi mdi-key-variant' title='Primary key'></i>";
+                if (data[i]['fields'][u].null === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
+                if (data[i]['fields'][u].unique === true) desc += "<i class='mdi mdi-key-variant' title='Unique'></i>";
+                if (data[i]['fields'][u].ai === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
+                html.find("tbody").append("<tr id='" + data[i]['fields'][u].text + "'>" +
+                    "        <td>" + desc + "</td>\n" +
                     "        <td>" + data[i]['fields'][u].text + "</td>\n" +
                     "        <td>" + data[i]['fields'][u].type + "</td>\n" +
-                    "        <td class=\"rightmost\">\n" +
-                    "            <span class=\"edit-field\">E</span>\n" +
-                    "            <span class=\"mover\">M</span>\n" +
+                    "        <td class='rightmost'>\n" +
+                    "            <i class='mdi mdi-pencil edit-field'></i>\n" +
+                    "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
                     "        </td></tr>");
             }
             html.appendTo("main");
@@ -164,12 +179,11 @@ $(function () {
     }
 
 
-    function getField(nameTable, nameID, callback) {
+    function getField(nameTable, nameField) {
         var i = searchTable(nameTable);
         for (var u in data[i]["fields"]) {
-            if (data[i]['fields'][u].text === nameID) callback(data[i]['fields'][u]);
+            if (data[i]['fields'][u].text === nameField) return data[i]['fields'][u];
         }
-
     }
 
     function addField(nameTable, items) {
@@ -177,23 +191,22 @@ $(function () {
         var obj = {text: items[0], type: items[1], pk: items[2], null: items[3], unique: items[4], ai: items[5]};
         data[i]['fields'].push(obj);
         saveDB();
-
     }
 
     function editField(nameTable, nameField, items) {
         var i = searchTable(nameTable);
         for (var u in data[i]["fields"]) {
             if (data[i]['fields'][u].text === nameField) {
-                console.log(items);
                 data[i]['fields'][u].text = items[0];
                 data[i]['fields'][u].type = items[1];
-                data[i]['fields'][u].pk = items[2];
-                data[i]['fields'][u].null = items[3];
-                data[i]['fields'][u].unique = items[4];
-                data[i]['fields'][u].ai = items[5];
+                data[i]['fields'][u].size = items[2];
+                data[i]['fields'][u].default = items[3];
+                data[i]['fields'][u].pk = items[4];
+                data[i]['fields'][u].null = items[5];
+                data[i]['fields'][u].unique = items[6];
+                data[i]['fields'][u].ai = items[7];
                 saveDB();
             }
-
         }
     }
 
@@ -204,7 +217,6 @@ $(function () {
                 data[i]['fields'].splice(u, 1);
                 saveDB();
             }
-
         }
     }
 
@@ -214,13 +226,10 @@ $(function () {
             var fields = data[i]["fields"];
             if (newPosition >= fields.length) {
                 var k = newPosition - fields.length;
-                while ((k--) + 1) {
-                    fields.push(undefined);
-                }
+                while ((k--) + 1) fields.push(undefined);
             }
             fields.splice(newPosition, 0, fields.splice(oldPosition, 1)[0]);
             saveDB();
-
         }
     }
 
@@ -249,7 +258,6 @@ $(function () {
         data[i].posX = posX;
         data[i].posY = posY;
         saveDB();
-
     }
 
     function genrateSQL() {
@@ -261,10 +269,11 @@ $(function () {
         $.getJSON("db.json", {}, function (result) {
             data = result;
         });
+        //$.ajaxSetup({async: true});
     }
 
     function saveDB() {
-        fs.writeFileSync('db.json', JSON.stringify(data));
+        fs.writeFileSync('db.json', JSON.stringify(data, null, 4));
     }
 
     function searchTable(nameTable) {
