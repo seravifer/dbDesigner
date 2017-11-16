@@ -2,7 +2,7 @@ const fs = require('fs');
 const pathElectron = require("path");
 const electron = require("electron");
 const ipc = require('electron').ipcRenderer;
-const {dialog} = require('electron').remote;
+const {dialog} = electron.remote;
 
 $(function () {
     let originPosition;
@@ -15,10 +15,13 @@ $(function () {
                 newDB();
                 break;
             case "open":
-                loadDB(dialog.showOpenDialog({
+                var newPath = dialog.showOpenDialog({
                     properties: ['openFile'],
                     filters: [{name: 'Database', extensions: ['json']}]
-                }));
+                });
+                if (newPath !== undefined) {
+                    loadDB(newPath);
+                }
                 break;
             case "save":
                 saveDB();
@@ -38,6 +41,44 @@ $(function () {
                 break;
         }
     });
+
+    function newDB() {
+        path = undefined;
+        data = [];
+        $("main").empty();
+    }
+
+    function loadDB(pathDB) {
+        path = pathDB;
+        data = [];
+        $("main").empty();
+        data = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+        createDB();
+    }
+
+    function saveDB() {
+        if (path === undefined) {
+            path = dialog.showSaveDialog({
+                defaultPath: "database.json"
+            });
+        }
+        fs.writeFileSync(path, JSON.stringify(data, null, 4));
+    }
+
+    function saveAsDB() {
+        var newPath = dialog.showSaveDialog({
+            defaultPath: "database.json"
+        });
+        if (newPath !== undefined) {
+            path = newPath;
+            fs.writeFileSync(path, JSON.stringify(data, null, 4));
+        }
+    }
+
+    function checkSave() {
+        var old = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+        return JSON.stringify(data) !== JSON.stringify(old);
+    }
 
     $("main")
         .on("click", ".cancel-insert, .cancel-table", function () {
@@ -205,7 +246,10 @@ $(function () {
             }
         });
 
-    loadDB("db.json"); // Dev
+    $(".close-modal").on("click", function () {
+        $(".modal").hide();
+    });
+
 
     function createDB() {
         for (var i in data) {
@@ -221,10 +265,13 @@ $(function () {
                 if (data[i]['fields'][u].null === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
                 if (data[i]['fields'][u].unique === true) desc += "<i class='mdi mdi-key-variant' title='Unique'></i>";
                 if (data[i]['fields'][u].ai === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
+                var types = data[i]['fields'][u].type;
+                if (data[i]['fields'][u].size > 0) types += "(" + data[i]['fields'][u].size + ")";
+                if (data[i]['fields'][u].default !== "") types += " [" + data[i]['fields'][u].default + "]";
                 html.find("tbody").append("<tr id='" + data[i]['fields'][u].text + "'>" +
                     "        <td>" + desc + "</td>\n" +
                     "        <td>" + data[i]['fields'][u].text + "</td>\n" +
-                    "        <td>" + data[i]['fields'][u].type + "</td>\n" +
+                    "        <td>" + types + "</td>\n" +
                     "        <td class='rightmost'>\n" +
                     "            <i class='mdi mdi-pencil edit-field'></i>\n" +
                     "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
@@ -254,7 +301,7 @@ $(function () {
             if (data[i]['fields'][u].text === nameField) {
                 data[i]['fields'][u].text = items[0];
                 data[i]['fields'][u].type = items[1];
-                data[i]['fields'][u].size = items[2];
+                data[i]['fields'][u].size = parseInt(items[2]);
                 data[i]['fields'][u].default = items[3];
                 data[i]['fields'][u].pk = items[4];
                 data[i]['fields'][u].null = items[5];
@@ -325,47 +372,27 @@ $(function () {
         data[i].posY = posY;
     }
 
+
     function generateSQL() {
-
-    }
-
-    function newDB() {
-        path = undefined;
-        data = [];
-        $("main").empty();
-    }
-
-    function loadDB(pathDB) {
-        path = pathDB;
-        data = [];
-        $("main").empty();
-        data = JSON.parse(fs.readFileSync(path, 'utf8').toString());
-        createDB();
-    }
-
-    function saveDB() {
-        if (path === undefined) {
-            path = dialog.showSaveDialog({
-                defaultPath: "database.json"
-            });
+        $(".modal").show();
+        var result = "";
+        for (var i in data) {
+            result += "CREATE TABLE `" + data[i].name + "` (";
+            for (var u in data[i]["fields"]) {
+                result += "\n\t`" + data[i]["fields"][u].text + "` " + data[i]["fields"][u].type;
+                if (data[i]['fields'][u].size > 0) result += "(" + data[i]['fields'][u].size + ")";
+                if (data[i]['fields'][u].default !== "") result += " DEFAULT '" + data[i]['fields'][u].default + "'";
+                if (data[i]['fields'][u].ai === true) result += " AUTO_INCREMENT";
+                if (data[i]['fields'][u].null === false) result += " NOT NULL";
+                if (data[i]['fields'][u].unique === true) result += " UNIQUE";
+                if (data[i]["fields"][u].text !== data[i]["fields"][data[i]["fields"].length - 1].text) result += ",";
+                if (data[i]['fields'][u].pk === true) result += "\n\tPRIMARY KEY (`" + data[i]["fields"][u].text + "`),";
+            }
+            result += "\n);\n";
         }
-        fs.writeFileSync(path, JSON.stringify(data, null, 4));
+        $(".code").text(result);
     }
 
-    function saveAsDB() {
-        var newPath = dialog.showSaveDialog({
-            defaultPath: "database.json"
-        });
-        if (newPath !== undefined) {
-            path = newPath;
-            fs.writeFileSync(path, JSON.stringify(data, null, 4));
-        }
-    }
-
-    function checkSave() {
-        var old = JSON.parse(fs.readFileSync(path, 'utf8').toString());
-        return JSON.stringify(data) !== JSON.stringify(old);
-    }
 
     window.onbeforeunload = (e) => {
         e.returnValue = false;
@@ -386,5 +413,7 @@ $(function () {
     };
 
     require(pathElectron.resolve('./contextmenu'));
+
+    loadDB("db.json"); // DevTool
 
 });

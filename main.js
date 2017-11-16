@@ -8,7 +8,7 @@ let win;
 
 function createWindow() {
     // Create the browser window.
-    win = new BrowserWindow({width: 1000, height: 800});
+    win = new BrowserWindow({width: 1400, height: 1000});
 
     // and load the index.html of the app.
     win.loadURL(url.format({
@@ -52,6 +52,7 @@ function createWindow() {
                         win.webContents.send('menuActions', 'saveAs')
                     }, accelerator: "CmdOrCtrl+Shift+S"
                 },
+                {type: 'separator'},
                 {role: 'close'}
             ]
         },
@@ -63,24 +64,21 @@ function createWindow() {
                         win.webContents.send('menuActions', 'newTable')
                     }, accelerator: "CmdOrCtrl+T"
                 },
-                {role: 'undo', enabled: 'false'},
-                {role: 'redo', enabled: 'false'},
                 {type: 'separator'},
                 {role: 'cut'},
                 {role: 'copy'},
-                {role: 'paste'}
+                {role: 'paste'},
+                {type: 'separator'},
+                {role: 'undo', enabled: 'false'},
+                {role: 'redo', enabled: 'false'},
             ]
         },
         {
             label: 'View',
             submenu: [
-                {role: 'reload'},
-                {role: 'forcereload'},
-                {role: 'toggledevtools'},
-                {type: 'separator'},
-                {role: 'resetzoom'},
                 {role: 'zoomin'},
                 {role: 'zoomout'},
+                {role: 'resetzoom'},
                 {type: 'separator'},
                 {role: 'togglefullscreen'}
             ]

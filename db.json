@@ -2,13 +2,13 @@
     {
         "name": "Empleado2",
         "comment": "",
-        "posX": 101,
-        "posY": 111,
+        "posX": 144,
+        "posY": 160,
         "fields": [
             {
                 "text": "empleado_id",
                 "type": "integer",
-                "size": 10,
+                "size": null,
                 "default": "default",
                 "pk": true,
                 "null": true,
@@ -19,7 +19,7 @@
             {
                 "text": "firstName",
                 "type": "varchar",
-                "size": "13",
+                "size": 13,
                 "default": "default2",
                 "pk": false,
                 "null": false,
@@ -46,8 +46,8 @@
     {
         "name": "Cliente",
         "comment": "",
-        "posX": 104,
-        "posY": 425,
+        "posX": 141,
+        "posY": 391,
         "fields": [
             {
                 "text": "id",
