@@ -1,14 +1,18 @@
-var fs = require('fs');
-var electron = require('electron').ipcRenderer;
+const fs = require('fs');
+const pathElectron = require("path");
+const electron = require("electron");
+const ipc = require('electron').ipcRenderer;
 const {dialog} = require('electron').remote;
 
 $(function () {
-    var originPosition;
-    var data;
+    let originPosition;
+    let data = [];
+    let path;
 
-    electron.on('menuActions', (event, message) => {
+    ipc.on('menuActions', (event, message) => {
         switch (message) {
             case "new":
+                newDB();
                 break;
             case "open":
                 loadDB(dialog.showOpenDialog({
@@ -19,21 +23,20 @@ $(function () {
             case "save":
                 saveDB();
                 break;
+            case "saveAs":
+                saveAsDB();
+                break;
             case "newTable":
-                addTable("table");
+                var html = $("#new-table").clone();
+                html.attr("id", "newTable");
+                html.find(".name_table").text("New table");
+                addTable("newTable");
+                html.appendTo("main");
                 break;
             case "export":
-                genrateSQL();
+                generateSQL();
                 break;
         }
-    });
-
-    $("#addTable").on("click", function () {
-        var html = $("#new-table").clone();
-        html.attr("id", "newTable");
-        html.find(".name_table").text("New table");
-        addTable("newTable");
-        html.appendTo("main");
     });
 
     $("main")
@@ -96,6 +99,23 @@ $(function () {
             html.find("input[name='field-unique']").attr("checked", result.unique);
             html.find("input[name='field-ai']").attr("checked", result.ai);
             var fk = result.foreign.length > 0;
+            /*if (fk) {html.find(".refs").show();
+                var table = html.find("field-ref-table");
+                for (var i in data) {
+                    table.append($("<option>", {
+                        value: data[i].name,
+                        text : data[i].name
+                    }));
+                }
+                var table = html.find("field-ref-fields");
+                for (var u in data[0]["fields"]) {
+                    table.append($("<option>", {
+                        value: data[i].name,
+                        text : data[i].name
+                    }));
+                }
+
+            }*/
             html.find("input[name='field-fk']").attr("checked", fk);
             parent.html("<td colspan=\"4\">" + html.html() + "</td>");
         })
@@ -142,7 +162,6 @@ $(function () {
                 $(this).next().click();
                 addField(nameTable, items);
             }
-
         })
 
         .on("click", ".save-table", function () {
@@ -153,7 +172,7 @@ $(function () {
             $(this).parents("table").attr("id", newName);
             parent.find(".name_table").text(newName);
             editTable(oldName, newName, newComment);
-            parent.find(".cancel-edit-table").click();
+            parent.find(".cancel-table").click(); // TODO Update new title
         })
 
         .on("DOMNodeInserted", ".draggable", function () {
@@ -186,7 +205,7 @@ $(function () {
             }
         });
 
-    loadDB("db.json");
+    loadDB("db.json"); // Dev
 
     function createDB() {
         for (var i in data) {
@@ -227,7 +246,6 @@ $(function () {
         var i = searchTable(nameTable);
         var obj = {text: items[0], type: items[1], pk: items[2], null: items[3], unique: items[4], ai: items[5]};
         data[i]['fields'].push(obj);
-        saveDB();
     }
 
     function editField(nameTable, nameField, items) {
@@ -242,7 +260,6 @@ $(function () {
                 data[i]['fields'][u].null = items[5];
                 data[i]['fields'][u].unique = items[6];
                 data[i]['fields'][u].ai = items[7];
-                saveDB();
             }
         }
     }
@@ -252,7 +269,6 @@ $(function () {
         for (var u in data[i]["fields"]) {
             if (data[i]['fields'][u].text === nameField) {
                 data[i]['fields'].splice(u, 1);
-                saveDB();
             }
         }
     }
@@ -266,55 +282,18 @@ $(function () {
                 while ((k--) + 1) fields.push(undefined);
             }
             fields.splice(newPosition, 0, fields.splice(oldPosition, 1)[0]);
-            saveDB();
         }
     }
 
-
-    function addTable(nameTable) {
-        var obj = {name: nameTable, comment: "", posX: 100, posY: 100, fields: []};
-        data.push(obj);
-        saveDB();
-    }
-
-    function editTable(nameTable, newName, newComment) {
+    function getForignkey(nameTable) {
+        var items = [];
         var i = searchTable(nameTable);
-        data[i].name = newName;
-        data[i].comment = newComment;
-        saveDB();
+        for (var u in data[i]["fields"]) {
+            if (data[i]['fields'][u].pk === true) items.push(data[i]['fields'][u].name)
+        }
+        return items;
     }
 
-    function deleteTable(nameTable) {
-        var i = searchTable(nameTable);
-        data.splice(i, 1);
-        saveDB();
-    }
-
-    function updatePos(nameTable, posX, posY) {
-        var i = searchTable(nameTable);
-        data[i].posX = posX;
-        data[i].posY = posY;
-        saveDB();
-    }
-
-    function genrateSQL() {
-
-    }
-
-    function loadDB(pathDB) {
-        data = "";
-        $("main").empty();
-        $.ajaxSetup({async: false});
-        $.getJSON(pathDB, {}, function (result) {
-            data = result;
-        });
-        $.ajaxSetup({async: true});
-        createDB();
-    }
-
-    function saveDB() {
-        fs.writeFileSync('db.json', JSON.stringify(data, null, 4));
-    }
 
     function searchTable(nameTable) {
         for (var i in data) {
@@ -323,5 +302,89 @@ $(function () {
             }
         }
     }
+
+    function addTable(nameTable) {
+        var obj = {name: nameTable, comment: "", posX: 100, posY: 100, fields: []};
+        data.push(obj);
+    }
+
+    function editTable(nameTable, newName, newComment) {
+        var i = searchTable(nameTable);
+        data[i].name = newName;
+        data[i].comment = newComment;
+    }
+
+    function deleteTable(nameTable) {
+        var i = searchTable(nameTable);
+        data.splice(i, 1);
+    }
+
+    function updatePos(nameTable, posX, posY) {
+        var i = searchTable(nameTable);
+        data[i].posX = posX;
+        data[i].posY = posY;
+    }
+
+    function generateSQL() {
+
+    }
+
+    function newDB() {
+        path = undefined;
+        data = [];
+        $("main").empty();
+    }
+
+    function loadDB(pathDB) {
+        path = pathDB;
+        data = [];
+        $("main").empty();
+        data = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+        createDB();
+    }
+
+    function saveDB() {
+        if (path === undefined) {
+            path = dialog.showSaveDialog({
+                defaultPath: "database.json"
+            });
+        }
+        fs.writeFileSync(path, JSON.stringify(data, null, 4));
+    }
+
+    function saveAsDB() {
+        var newPath = dialog.showSaveDialog({
+            defaultPath: "database.json"
+        });
+        if (newPath !== undefined) {
+            path = newPath;
+            fs.writeFileSync(path, JSON.stringify(data, null, 4));
+        }
+    }
+
+    function checkSave() {
+        var old = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+        return JSON.stringify(data) !== JSON.stringify(old);
+    }
+
+    window.onbeforeunload = (e) => {
+        e.returnValue = false;
+        if (checkSave()) {
+            var answer = dialog.showMessageBox({
+                type: "question",
+                message: "Want to save your changes?",
+                buttons: ["Save", "Don't save", "Cancel"],
+                noLink: true
+            });
+            if (answer === 0) {
+                saveDB();
+                electron.remote.getCurrentWindow().destroy();
+            } else if (answer === 1) {
+                electron.remote.getCurrentWindow().destroy();
+            }
+        } else electron.remote.getCurrentWindow().destroy();
+    };
+
+    require(pathElectron.resolve('./contextmenu'));
 
 });

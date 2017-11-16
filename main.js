@@ -26,24 +26,45 @@ function createWindow() {
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
         win = null
-    })
+    });
 
     const template = [
         {
             label: 'File',
             submenu: [
-                {label: 'New', click() {win.webContents.send('menuActions', 'new')}, accelerator: "CmdOrCtrl+N"},
-                {label: 'Open', click() {win.webContents.send('menuActions', 'open')}, accelerator: "CmdOrCtrl+O"},
-                {label: 'Save', click() {win.webContents.send('menuActions', 'save')}, accelerator: "CmdOrCtrl+S"},
+                {
+                    label: 'New', click() {
+                        win.webContents.send('menuActions', 'new')
+                    }, accelerator: "CmdOrCtrl+N"
+                },
+                {
+                    label: 'Open', click() {
+                        win.webContents.send('menuActions', 'open')
+                    }, accelerator: "CmdOrCtrl+O"
+                },
+                {
+                    label: 'Save', click() {
+                        win.webContents.send('menuActions', 'save')
+                    }, accelerator: "CmdOrCtrl+S"
+                },
+                {
+                    label: 'Save As...', click() {
+                        win.webContents.send('menuActions', 'saveAs')
+                    }, accelerator: "CmdOrCtrl+Shift+S"
+                },
                 {role: 'close'}
             ]
         },
         {
             label: 'Edit',
             submenu: [
-                {label: 'Add table', click() {win.webContents.send('menuActions', 'newTable')}, accelerator: "CmdOrCtrl+T"},
-                {role: 'undo'},
-                {role: 'redo'},
+                {
+                    label: 'Add table', click() {
+                        win.webContents.send('menuActions', 'newTable')
+                    }, accelerator: "CmdOrCtrl+T"
+                },
+                {role: 'undo', enabled: 'false'},
+                {role: 'redo', enabled: 'false'},
                 {type: 'separator'},
                 {role: 'cut'},
                 {role: 'copy'},
@@ -65,19 +86,16 @@ function createWindow() {
             ]
         },
         {
-            role: 'help',
-            submenu: [
-                {
-                    label: 'About',
-                    click () { require('electron').shell.openExternal('') }
-                }
-            ]
+            label: "Export",
+            click() {
+                win.webContents.send('menuActions', 'export')
+            }, accelerator: "CmdOrCtrl+Q"
         },
         {
-            label: "Export",
-            click() {win.webContents.send('menuActions', 'export')}, accelerator: "CmdOrCtrl+Q"
+            label: 'About'
         }
-    ]
+
+    ];
     /*
     if (process.platform === 'darwin') {
         template.unshift({
