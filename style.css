@@ -21,7 +21,7 @@ main {
     font-size: 14px;
     background-color: #eee;
     min-width: 200px;
-    position: absolute;
+    position: absolute!important;
     border-collapse: collapse;
     border: 1px solid #adadad;
     /*box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.6);*/
@@ -47,9 +47,15 @@ main {
     border-bottom: 1px solid #adadad;
     border-right: 1px solid #adadad;
     background-color: #f8f8f8;
-    padding: 6px;
-    white-space: nowrap;
-    vertical-align: middle;
+    padding: 6px 10px;
+}
+
+.entity-table td:first-child {
+    width: 70px;
+}
+
+.entity-table td i {
+    padding-right: 3px;
 }
 
 .move-field {

@@ -4,7 +4,7 @@ const electron = require("electron");
 const ipc = require('electron').ipcRenderer;
 const {dialog} = electron.remote;
 
-$(function () {
+$( document ).ready(function() {
     let originPosition;
     let data = [];
     let path;
@@ -19,9 +19,7 @@ $(function () {
                     properties: ['openFile'],
                     filters: [{name: 'Database', extensions: ['json']}]
                 });
-                if (newPath !== undefined) {
-                    loadDB(newPath);
-                }
+                if (newPath !== undefined) loadDB(newPath);
                 break;
             case "save":
                 saveDB();
@@ -37,7 +35,8 @@ $(function () {
                 html.appendTo("main");
                 break;
             case "export":
-                generateSQL();
+                $(".modal").show();
+                $(".code").text(generateSQL());
                 break;
         }
     });
@@ -53,7 +52,10 @@ $(function () {
         data = [];
         $("main").empty();
         data = JSON.parse(fs.readFileSync(path, 'utf8').toString());
-        createDB();
+        initView();
+        setTimeout(function(){ // Fucking problem
+            writeCanvas();
+        }, 1000);
     }
 
     function saveDB() {
@@ -79,6 +81,7 @@ $(function () {
         var old = JSON.parse(fs.readFileSync(path, 'utf8').toString());
         return JSON.stringify(data) !== JSON.stringify(old);
     }
+
 
     $("main")
         .on("click", ".cancel-insert, .cancel-table", function () {
@@ -140,23 +143,24 @@ $(function () {
             html.find("input[name='field-unique']").attr("checked", result.unique);
             html.find("input[name='field-ai']").attr("checked", result.ai);
             var fk = result.foreign.length > 0;
-            /*if (fk) {html.find(".refs").show();
-                var table = html.find("field-ref-table");
+            if (fk) {
+                html.find(".refs").show();
                 for (var i in data) {
-                    table.append($("<option>", {
+                    html.find(".field-ref-table").append($("<option>", {
                         value: data[i].name,
-                        text : data[i].name
+                        text: data[i].name
                     }));
                 }
-                var table = html.find("field-ref-fields");
-                for (var u in data[0]["fields"]) {
-                    table.append($("<option>", {
-                        value: data[i].name,
-                        text : data[i].name
+                var t = searchTable(result.foreign[0]); // TODO BUG: change the nameTable
+                for (var u in data[t]["fields"]) {
+                    html.find(".field-ref-fields").append($("<option>", {
+                        value: data[t]["fields"][u].text,
+                        text: data[t]["fields"][u].text
                     }));
                 }
-
-            }*/
+                html.find(".field-ref-table option[value=" + result.foreign[0] + "]").attr("selected", "selected");
+                html.find(".field-ref-table option[value=" + result.foreign[1] + "]").attr("selected", "selected");
+            }
             html.find("input[name='field-fk']").attr("checked", fk);
             parent.html("<td colspan=\"4\">" + html.html() + "</td>");
         })
@@ -182,6 +186,10 @@ $(function () {
                 parent.find("input[name='field-null']").prop("checked"),
                 parent.find("input[name='field-unique']").prop("checked"),
                 parent.find("input[name='field-ai']").prop("checked"));
+            if (parent.find("input[name='field-fk']").prop("checked")) {
+                items.push(parent.find(".field-ref-table").val(),
+                    parent.find(".field-ref-fields").val());
+            }
             var desc = "";
             if (items[4] === true) desc += "<i class='mdi mdi-key-variant' title='Primary key'></i>";
             if (items[5] === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
@@ -211,16 +219,21 @@ $(function () {
             var newName = parent.find("input[name='table-name']").val();
             var newComment = parent.find("textarea[name='table-comment']").val();
             $(this).parents("table").attr("id", newName);
-            parent.find(".name_table").text(newName);
             editTable(oldName, newName, newComment);
-            parent.find(".cancel-table").click(); // TODO Update new title
+            $(this).parents("th").find(".name_table").text(newName);
+            parent.find(".cancel-table").click();
         })
 
         .on("DOMNodeInserted", ".draggable", function () {
             $(this).draggable({
                 cursor: "move",
+                handle: "thead",
+                drag: function () {
+                  writeCanvas();
+                },
                 stop: function () {
                     updatePos($(this).attr("id"), $(this).offset().left, $(this).offset().top);
+                    writeCanvas();
                 }
             });
             $("tbody").sortable({
@@ -244,14 +257,46 @@ $(function () {
                 parent.find("input[name='field-null']").prop("disabled", false);
                 parent.find("input[name='field-unique']").prop("disabled", false);
             }
+        })
+
+        .on("click", "input[name='field-fk']", function () {
+            var parent = $(this).parents("td").first();
+            if ($(this).is(":checked")) {
+                parent.find(".refs").show();
+                parent.find(".field-ref-table").empty();
+                parent.find(".field-ref-fields").empty();
+                for (var i in data) {
+
+                    parent.find(".field-ref-table").append($("<option>", {
+                        value: data[i].name,
+                        text: data[i].name
+                    }));
+                }
+                for (var u in data[0]["fields"]) {
+                    parent.find(".field-ref-fields").append($("<option>", {
+                        value: data[0]["fields"][u].text,
+                        text: data[0]["fields"][u].text
+                    }));
+                }
+            } else parent.find(".refs").hide();
         });
 
-    $(".close-modal").on("click", function () {
-        $(".modal").hide();
-    });
+    $(".modal")
+        .on("click", ".close-modal", function () {
+            $(".modal").hide();
+        })
+        .on("click", ".save-code", function () {
+            var newPath = dialog.showSaveDialog({
+                defaultPath: "database.sql"
+            });
+            if (newPath !== undefined) {
+                fs.writeFileSync(newPath, generateSQL());
+            }
+        });
 
 
-    function createDB() {
+    function initView() {
+        $("main").append("<canvas id=\"graph\" class=\"canvas\" width=\"3840\" height=\"2400\"></canvas>");
         for (var i in data) {
             var html = $("#new-table").clone();
             html.attr("id", data[i].name);
@@ -291,7 +336,19 @@ $(function () {
 
     function addField(nameTable, items) {
         var i = searchTable(nameTable);
-        var obj = {text: items[0], type: items[1], pk: items[2], null: items[3], unique: items[4], ai: items[5]};
+        var obj = {
+            text: items[0],
+            type: items[1],
+            size: parseInt(items[2]),
+            default: items[3],
+            pk: items[4],
+            null: items[5],
+            unique: items[6],
+            ai: items[7],
+        };
+        if (items.length > 7) {
+            obj.foreign = [items[8], items[9]];
+        } else obj.foreign = [];
         data[i]['fields'].push(obj);
     }
 
@@ -307,6 +364,9 @@ $(function () {
                 data[i]['fields'][u].null = items[5];
                 data[i]['fields'][u].unique = items[6];
                 data[i]['fields'][u].ai = items[7];
+                if (items.length > 7) {
+                    data[i]['fields'][u]['foreign'] = [items[8], items[9]];
+                }
             }
         }
     }
@@ -374,7 +434,6 @@ $(function () {
 
 
     function generateSQL() {
-        $(".modal").show();
         var result = "";
         for (var i in data) {
             result += "CREATE TABLE `" + data[i].name + "` (";
@@ -390,7 +449,35 @@ $(function () {
             }
             result += "\n);\n";
         }
-        $(".code").text(result);
+        return result;
+    }
+    
+    function writeCanvas() {
+        var canvas = document.getElementById("graph");
+        var ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#000";
+
+        for (var i in data) {
+            for (var u in data[i]["fields"]) {
+                if (data[i]['fields'][u]['foreign'].length > 0) {
+                    var table2 = data[i]['fields'][u]['foreign'][0];
+                    var field2 = data[i]['fields'][u]['foreign'][1];
+                    var posP1 = $("#" + data[i].name).find("#" + data[i]['fields'][u].text).offset();
+                    var posP2 = $("#" + table2).find("#" + field2).offset();
+                    var posP1x = posP1.left + $("#" + data[i].name).find("#" + data[i]['fields'][u].text).outerWidth();
+                    var middle = (posP1x + posP2.left) / 2;
+
+                    console.log(middle + " - " +posP1.top + " - " + posP2.top + " - " + posP2.left);
+                    ctx.beginPath();
+                    ctx.moveTo(posP1x, posP1.top +15);
+                    ctx.bezierCurveTo(middle, posP1.top+15, middle, posP2.top+15, posP2.left, posP2.top+15);
+                    ctx.stroke();
+                }
+            }
+        }
+
     }
 
 
@@ -398,7 +485,8 @@ $(function () {
         e.returnValue = false;
         if (checkSave()) {
             var answer = dialog.showMessageBox({
-                type: "question",
+                type: "warning",
+                title: "dbDesigner",
                 message: "Want to save your changes?",
                 buttons: ["Save", "Don't save", "Cancel"],
                 noLink: true

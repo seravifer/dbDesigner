@@ -1,9 +1,9 @@
 [
     {
-        "name": "Empleado2",
+        "name": "Empleado",
         "comment": "",
-        "posX": 144,
-        "posY": 160,
+        "posX": 788,
+        "posY": 202,
         "fields": [
             {
                 "text": "empleado_id",
@@ -25,10 +25,7 @@
                 "null": false,
                 "unique": true,
                 "ai": false,
-                "foreign": [
-                    "Ford",
-                    "BMW"
-                ]
+                "foreign": []
             },
             {
                 "text": "lastName",
@@ -44,10 +41,10 @@
         ]
     },
     {
-        "name": "Cliente",
+        "name": "Clientes",
         "comment": "",
-        "posX": 141,
-        "posY": 391,
+        "posX": 253,
+        "posY": 77,
         "fields": [
             {
                 "text": "id",
@@ -55,7 +52,7 @@
                 "size": 10,
                 "default": "default",
                 "pk": true,
-                "null": true,
+                "null": false,
                 "unique": false,
                 "ai": true,
                 "foreign": []
@@ -69,7 +66,10 @@
                 "null": false,
                 "unique": false,
                 "ai": false,
-                "foreign": []
+                "foreign": [
+                    "Empleado",
+                    "empleado_id"
+                ]
             }
         ]
     }
