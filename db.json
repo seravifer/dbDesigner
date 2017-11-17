@@ -2,8 +2,8 @@
     {
         "name": "Empleado",
         "comment": "",
-        "posX": 788,
-        "posY": 202,
+        "posX": 334,
+        "posY": 382,
         "fields": [
             {
                 "text": "empleado_id",
@@ -43,8 +43,8 @@
     {
         "name": "Clientes",
         "comment": "",
-        "posX": 253,
-        "posY": 77,
+        "posX": 203,
+        "posY": 100,
         "fields": [
             {
                 "text": "id",

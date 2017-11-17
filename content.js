@@ -4,22 +4,42 @@ const electron = require("electron");
 const ipc = require('electron').ipcRenderer;
 const {dialog} = electron.remote;
 
-$( document ).ready(function() {
-    let originPosition;
-    let data = [];
-    let path;
+$(function () {
+    var originPosition;
+    var data = [];
+    var path;
 
     ipc.on('menuActions', (event, message) => {
         switch (message) {
             case "new":
+                if (checkSave()) {
+                    let answer = dialog.showMessageBox({
+                        type: "warning",
+                        title: "dbDesigner",
+                        message: "Want to save your changes?",
+                        buttons: ["Save", "Don't save"],
+                        noLink: true
+                    });
+                    if (answer === 0) saveDB();
+                }
                 newDB();
                 break;
             case "open":
+                if (checkSave()) {
+                    let answer = dialog.showMessageBox({
+                        type: "warning",
+                        title: "dbDesigner",
+                        message: "Want to save your changes?",
+                        buttons: ["Save", "Don't save"],
+                        noLink: true
+                    });
+                    if (answer === 0) saveDB();
+                }
                 var newPath = dialog.showOpenDialog({
                     properties: ['openFile'],
                     filters: [{name: 'Database', extensions: ['json']}]
                 });
-                if (newPath !== undefined) loadDB(newPath);
+                if (newPath !== undefined) loadDB(newPath[0]);
                 break;
             case "save":
                 saveDB();
@@ -44,7 +64,7 @@ $( document ).ready(function() {
     function newDB() {
         path = undefined;
         data = [];
-        $("main").empty();
+        $("main").empty().append("<canvas id='graph' class='canvas' width='3800' height='2400'></canvas>");
     }
 
     function loadDB(pathDB) {
@@ -53,7 +73,7 @@ $( document ).ready(function() {
         $("main").empty();
         data = JSON.parse(fs.readFileSync(path, 'utf8').toString());
         initView();
-        setTimeout(function(){ // Fucking problem
+        setTimeout(function () { // Fucking problem, why!?
             writeCanvas();
         }, 1000);
     }
@@ -64,7 +84,10 @@ $( document ).ready(function() {
                 defaultPath: "database.json"
             });
         }
-        fs.writeFileSync(path, JSON.stringify(data, null, 4));
+        try {
+            fs.writeFileSync(path, JSON.stringify(data, null, 4));
+        } catch (err) {
+        }
     }
 
     function saveAsDB() {
@@ -78,52 +101,41 @@ $( document ).ready(function() {
     }
 
     function checkSave() {
-        var old = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+        var old = "";
+        try {
+            old = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+        } catch (error) {
+        }
         return JSON.stringify(data) !== JSON.stringify(old);
     }
 
 
     $("main")
+        .on("click", ".insert-field, .edit-table", function () {
+            $(this).parent().hide();
+            $(this).parent().next().show();
+        })
+
         .on("click", ".cancel-insert, .cancel-table", function () {
             $(this).parent().hide();
             $(this).parent().prev().show();
         })
 
-        .on("click", ".insert-field, .edit-table", function () {
-            $(this).parent().hide();
-            $(this).parent().next().show();
+        .on("click", ".save-table", function () {
+            var parent = $(this).parent();
+            var oldName = $(this).parents("table").attr("id");
+            var newName = parent.find("input[name='table-name']").val();
+            var newComment = parent.find("textarea[name='table-comment']").val();
+            $(this).parents("table").attr("id", newName);
+            editTable(oldName, newName, newComment);
+            $(this).parents("th").find(".name_table").text(newName);
+            parent.find(".cancel-table").click();
         })
 
         .on("click", ".delete-table", function () {
             var nameTable = $(this).parents("table").attr("id");
             deleteTable(nameTable);
             $(this).parents("table").remove();
-        })
-
-        .on("click", ".cancel-field", function () {
-            var parent = $(this).parents("tr").eq(0);
-            var items = [];
-            items.push(parent.find("input[name='field-name']").val(),
-                parent.find("select[name='field-type']").val(),
-                parent.find("input[name='field-size']").val(),
-                parent.find("input[name='field-default']").val(),
-                parent.find("input[name='field-pk']").prop("checked"),
-                parent.find("input[name='field-null']").prop("checked"),
-                parent.find("input[name='field-unique']").prop("checked"),
-                parent.find("input[name='field-ai']").prop("checked"));
-            parent.attr("id", items[0]);
-            var desc = "";
-            if (items[4] === true) desc += "<i class='mdi mdi-key-variant' title='Primary key'></i>";
-            if (items[5] === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
-            if (items[6] === true) desc += "<i class='mdi mdi-key-variant' title='Unique'></i>";
-            if (items[7] === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
-            parent.html("        <td>" + desc + "</td>\n" +
-                "        <td>" + items[0] + "</td>\n" +
-                "        <td>" + items[1] + "</td>\n" +
-                "        <td class='rightmost'>\n" +
-                "            <i class='mdi mdi-pencil edit-field'></i>\n" +
-                "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
-                "        </td>");
         })
 
         .on("click", ".edit-field", function () {
@@ -162,15 +174,7 @@ $( document ).ready(function() {
                 html.find(".field-ref-table option[value=" + result.foreign[1] + "]").attr("selected", "selected");
             }
             html.find("input[name='field-fk']").attr("checked", fk);
-            parent.html("<td colspan=\"4\">" + html.html() + "</td>");
-        })
-
-        .on("click", ".delete-field", function () {
-            var parent = $(this).parents("tr").eq(0);
-            var nameField = parent.attr("id");
-            var nameTable = parent.parents("table").attr("id");
-            deleteField(nameTable, nameField);
-            parent.remove();
+            parent.html("<td colspan='4'><div class='changes'>" + html.html() + "</div></td>");
         })
 
         .on("click", ".save-insert", function () {
@@ -187,8 +191,7 @@ $( document ).ready(function() {
                 parent.find("input[name='field-unique']").prop("checked"),
                 parent.find("input[name='field-ai']").prop("checked"));
             if (parent.find("input[name='field-fk']").prop("checked")) {
-                items.push(parent.find(".field-ref-table").val(),
-                    parent.find(".field-ref-fields").val());
+                items.push(parent.find(".field-ref-table").val(), parent.find(".field-ref-fields").val());
             }
             var desc = "";
             if (items[4] === true) desc += "<i class='mdi mdi-key-variant' title='Primary key'></i>";
@@ -213,15 +216,35 @@ $( document ).ready(function() {
             }
         })
 
-        .on("click", ".save-table", function () {
-            var parent = $(this).parent();
-            var oldName = $(this).parents("table").attr("id");
-            var newName = parent.find("input[name='table-name']").val();
-            var newComment = parent.find("textarea[name='table-comment']").val();
-            $(this).parents("table").attr("id", newName);
-            editTable(oldName, newName, newComment);
-            $(this).parents("th").find(".name_table").text(newName);
-            parent.find(".cancel-table").click();
+        .on("click", ".cancel-field", function () {
+            var parent = $(this).parents("tr").eq(0);
+            var nameField = parent.attr("id");
+            var nameTable = parent.parents("table").attr("id");
+            var i = searchTable(nameTable);
+            var u = searchField(i, nameField);
+            var desc = "";
+            if (data[i]['fields'][u].pk === true) desc += "<i class='mdi mdi-key-variant' title='Primary key'></i>";
+            if (data[i]['fields'][u].null === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
+            if (data[i]['fields'][u].unique === true) desc += "<i class='mdi mdi-key-variant' title='Unique'></i>";
+            if (data[i]['fields'][u].ai === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
+            var types = data[i]['fields'][u].type;
+            if (data[i]['fields'][u].size > 0) types += "(" + data[i]['fields'][u].size + ")";
+            if (data[i]['fields'][u].default !== "") types += " [" + data[i]['fields'][u].default + "]";
+            parent.html("        <td>" + desc + "</td>\n" +
+                "        <td>" + data[i]['fields'][u].text + "</td>\n" +
+                "        <td>" + types + "</td>\n" +
+                "        <td class='rightmost'>\n" +
+                "            <i class='mdi mdi-pencil edit-field'></i>\n" +
+                "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
+                "        </td>");
+        })
+
+        .on("click", ".delete-field", function () {
+            var parent = $(this).parents("tr").eq(0);
+            var nameField = parent.attr("id");
+            var nameTable = parent.parents("table").attr("id");
+            deleteField(nameTable, nameField);
+            parent.remove();
         })
 
         .on("DOMNodeInserted", ".draggable", function () {
@@ -229,7 +252,7 @@ $( document ).ready(function() {
                 cursor: "move",
                 handle: "thead",
                 drag: function () {
-                  writeCanvas();
+                    writeCanvas();
                 },
                 stop: function () {
                     updatePos($(this).attr("id"), $(this).offset().left, $(this).offset().top);
@@ -266,7 +289,6 @@ $( document ).ready(function() {
                 parent.find(".field-ref-table").empty();
                 parent.find(".field-ref-fields").empty();
                 for (var i in data) {
-
                     parent.find(".field-ref-table").append($("<option>", {
                         value: data[i].name,
                         text: data[i].name
@@ -279,6 +301,23 @@ $( document ).ready(function() {
                     }));
                 }
             } else parent.find(".refs").hide();
+        })
+
+        .on("change", ".field-ref-table", function () {
+            var parent = $(this).parents(".refs").first();
+            parent.find(".field-ref-fields").empty();
+            var nameTable = this.value;
+            var i = searchTable(nameTable);
+            for (var u in data[i]["fields"]) {
+                parent.find(".field-ref-fields").append($("<option>", {
+                    value: data[i]["fields"][u].text,
+                    text: data[i]["fields"][u].text
+                }));
+            }
+        })
+
+        .on("click", function () {
+            writeCanvas();
         });
 
     $(".modal")
@@ -296,7 +335,7 @@ $( document ).ready(function() {
 
 
     function initView() {
-        $("main").append("<canvas id=\"graph\" class=\"canvas\" width=\"3840\" height=\"2400\"></canvas>");
+        $("main").append("<canvas id='graph' class='canvas' width='3800' height='2400'></canvas>");
         for (var i in data) {
             var html = $("#new-table").clone();
             html.attr("id", data[i].name);
@@ -320,7 +359,8 @@ $( document ).ready(function() {
                     "        <td class='rightmost'>\n" +
                     "            <i class='mdi mdi-pencil edit-field'></i>\n" +
                     "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
-                    "        </td></tr>");
+                    "        </td>" +
+                    "</tr>");
             }
             html.appendTo("main");
         }
@@ -331,6 +371,12 @@ $( document ).ready(function() {
         var i = searchTable(nameTable);
         for (var u in data[i]["fields"]) {
             if (data[i]['fields'][u].text === nameField) return data[i]['fields'][u];
+        }
+    }
+
+    function searchField(indexTable, nameField) {
+        for (var u in data[indexTable]["fields"]) {
+            if (data[indexTable]['fields'][u].text === nameField) return u;
         }
     }
 
@@ -354,7 +400,7 @@ $( document ).ready(function() {
 
     function editField(nameTable, nameField, items) {
         var i = searchTable(nameTable);
-        for (var u in data[i]["fields"]) {
+        for (var u in data[i]['fields']) {
             if (data[i]['fields'][u].text === nameField) {
                 data[i]['fields'][u].text = items[0];
                 data[i]['fields'][u].type = items[1];
@@ -373,7 +419,7 @@ $( document ).ready(function() {
 
     function deleteField(nameTable, nameField) {
         var i = searchTable(nameTable);
-        for (var u in data[i]["fields"]) {
+        for (var u in data[i]['fields']) {
             if (data[i]['fields'][u].text === nameField) {
                 data[i]['fields'].splice(u, 1);
             }
@@ -383,7 +429,7 @@ $( document ).ready(function() {
     function moveField(nameTable, oldPosition, newPosition) {
         if (oldPosition !== newPosition) {
             var i = searchTable(nameTable);
-            var fields = data[i]["fields"];
+            var fields = data[i]['fields'];
             if (newPosition >= fields.length) {
                 var k = newPosition - fields.length;
                 while ((k--) + 1) fields.push(undefined);
@@ -395,7 +441,7 @@ $( document ).ready(function() {
     function getForignkey(nameTable) {
         var items = [];
         var i = searchTable(nameTable);
-        for (var u in data[i]["fields"]) {
+        for (var u in data[i]['fields']) {
             if (data[i]['fields'][u].pk === true) items.push(data[i]['fields'][u].name)
         }
         return items;
@@ -437,21 +483,21 @@ $( document ).ready(function() {
         var result = "";
         for (var i in data) {
             result += "CREATE TABLE `" + data[i].name + "` (";
-            for (var u in data[i]["fields"]) {
-                result += "\n\t`" + data[i]["fields"][u].text + "` " + data[i]["fields"][u].type;
+            for (var u in data[i]['fields']) {
+                result += "\n\t`" + data[i]['fields'][u].text + "` " + data[i]['fields'][u].type;
                 if (data[i]['fields'][u].size > 0) result += "(" + data[i]['fields'][u].size + ")";
                 if (data[i]['fields'][u].default !== "") result += " DEFAULT '" + data[i]['fields'][u].default + "'";
                 if (data[i]['fields'][u].ai === true) result += " AUTO_INCREMENT";
                 if (data[i]['fields'][u].null === false) result += " NOT NULL";
                 if (data[i]['fields'][u].unique === true) result += " UNIQUE";
-                if (data[i]["fields"][u].text !== data[i]["fields"][data[i]["fields"].length - 1].text) result += ",";
-                if (data[i]['fields'][u].pk === true) result += "\n\tPRIMARY KEY (`" + data[i]["fields"][u].text + "`),";
+                if (data[i]['fields'][u].text !== data[i]['fields'][data[i]['fields'].length - 1].text) result += ",";
+                if (data[i]['fields'][u].pk === true) result += "\n\tPRIMARY KEY (`" + data[i]['fields'][u].text + "`),";
             }
             result += "\n);\n";
         }
         return result;
     }
-    
+
     function writeCanvas() {
         var canvas = document.getElementById("graph");
         var ctx = canvas.getContext("2d");
@@ -460,26 +506,35 @@ $( document ).ready(function() {
         ctx.strokeStyle = "#000";
 
         for (var i in data) {
-            for (var u in data[i]["fields"]) {
+            for (var u in data[i]['fields']) {
                 if (data[i]['fields'][u]['foreign'].length > 0) {
-                    var table2 = data[i]['fields'][u]['foreign'][0];
-                    var field2 = data[i]['fields'][u]['foreign'][1];
-                    var posP1 = $("#" + data[i].name).find("#" + data[i]['fields'][u].text).offset();
-                    var posP2 = $("#" + table2).find("#" + field2).offset();
-                    var posP1x = posP1.left + $("#" + data[i].name).find("#" + data[i]['fields'][u].text).outerWidth();
-                    var middle = (posP1x + posP2.left) / 2;
+                    var P1 = $("#" + data[i].name).find("#" + data[i]['fields'][u].text);
+                    var P2 = $("#" + data[i]['fields'][u]['foreign'][0]).find("#" + data[i]['fields'][u]['foreign'][1]);
 
-                    console.log(middle + " - " +posP1.top + " - " + posP2.top + " - " + posP2.left);
+                    var posP1 = P1.offset();
+                    var posP2 = P2.offset();
+
+                    var posP1right = posP1.left + P1.outerWidth();
+
                     ctx.beginPath();
-                    ctx.moveTo(posP1x, posP1.top +15);
-                    ctx.bezierCurveTo(middle, posP1.top+15, middle, posP2.top+15, posP2.left, posP2.top+15);
+                    if (posP2.left - 50 < posP1right) {
+                        var right = posP1.left - (posP2.left - posP1.left);
+                        ctx.moveTo(posP1.left, posP1.top + 15);
+                        ctx.bezierCurveTo(right, posP1.top + 15, posP1.left, posP2.top + 15, posP2.left, posP2.top + 15);
+                    } else {
+                        posP1.left = posP1right;
+                        var middle = (posP1.left + posP2.left) / 2;
+                        ctx.moveTo(posP1.left, posP1.top + 15);
+                        ctx.bezierCurveTo(middle, posP1.top + 15, middle, posP2.top + 15, posP2.left, posP2.top + 15);
+                    }
                     ctx.stroke();
+
+                    console.log("Pos: " + posP1.top + " - " + posP1.left + " - " + posP2.top + " - " + posP2.left + " - " + (right||middle));
                 }
             }
         }
 
     }
-
 
     window.onbeforeunload = (e) => {
         e.returnValue = false;

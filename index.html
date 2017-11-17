@@ -3,7 +3,10 @@
 <head>
     <meta charset="utf-8">
     <title>dbDesigner</title>
-    <script>if (typeof module === 'object') {window.module = module;module = undefined;}</script>
+    <script>if (typeof module === 'object') {
+        window.module = module;
+        module = undefined;
+    }</script>
     <script src="assets/jquery-3.2.1.min.js"></script>
     <script src="assets/jquery-ui.custom.min.js"></script>
     <script src="content.js"></script>
@@ -17,7 +20,7 @@
 <main>
 </main>
 
-<table class="entity-table draggable" id="new-table">
+<table class="entity-table draggable" id="new-table" style="left: 50px; top: 50px;">
     <thead>
     <tr>
         <th colspan="4">
@@ -49,62 +52,68 @@
                 <span class="insert-field"><i class='mdi mdi-plus-circle'></i>Add field</span>
             </div>
             <div class="changes" style="display: none;">
-                <label>Name</label>
-                <input type="text" name="field-name">
-                <br>
-                <label>Type</label>
-                <select name="field-type">
-                    <option value="binary">binary</option>
-                    <option value="blob">blob</option>
-                    <option value="boolean">boolean</option>
-                    <option value="date">date</option>
-                    <option value="datetime">datetime</option>
-                    <option value="decimal">decimal</option>
-                    <option value="float">float</option>
-                    <option value="integer">integer</option>
-                    <option value="string">string</option>
-                    <option value="text">text</option>
-                    <option value="time">time</option>
-                    <option value="timestamp">timestamp</option>
-                    <option value="varchar">varchar</option>
-                </select>
-                <br>
-                <label>Size</label>
-                <input type="text" name="field-size">
-                <br>
-                <label>Default</label>
-                <input type="text" name="field-default">
-                <br>
-                <label>
-                    <input type="checkbox" name="field-pk"><span>Primary Key</span>
-                </label>
-                <br>
-                <label>
-                    <input type="checkbox" name="field-null"><span>Allow nulls</span>
-                </label>
-                <br>
-                <label>
-                    <input type="checkbox" name="field-unique"><span>Unique</span>
-                </label>
-                <br>
-                <label>
-                    <input type="checkbox" name="field-ai"><span>Auto Increment</span>
-                </label>
-                <br>
-                <label>
-                    <input type="checkbox" name="field-fk"><span>Foreign key</span>
-                </label>
-                <br>
+                <div class="field-box">
+                    <span>Name</span>
+                    <input type="text" name="field-name">
+                </div>
+                <div class="field-box">
+                    <span>Type</span>
+                    <select name="field-type">
+                        <option value="binary">binary</option>
+                        <option value="blob">blob</option>
+                        <option value="boolean">boolean</option>
+                        <option value="date">date</option>
+                        <option value="datetime">datetime</option>
+                        <option value="decimal">decimal</option>
+                        <option value="float">float</option>
+                        <option value="integer">integer</option>
+                        <option value="string">string</option>
+                        <option value="text">text</option>
+                        <option value="time">time</option>
+                        <option value="timestamp">timestamp</option>
+                        <option value="varchar">varchar</option>
+                    </select>
+                </div>
+                <div class="field-box">
+                    <span>Size</span>
+                    <input type="text" name="field-size">
+                </div>
+                <div class="field-box">
+                    <span>Default</span>
+                    <input type="text" name="field-default">
+                </div>
+                <div class="field-box checkbox">
+                    <input type="checkbox" name="field-pk">
+                    <label>Primary Key</label>
+                </div>
+                <div class="field-box checkbox">
+                    <input type="checkbox" name="field-null">
+                    <label>Allow nulls</label>
+                </div>
+                <div class="field-box checkbox">
+                    <input type="checkbox" name="field-unique">
+                    <label>Unique</label>
+                </div>
+                <div class="field-box checkbox">
+                    <input type="checkbox" name="field-ai">
+                    <label>Auto Increment</label>
+                </div>
+                <div class="field-box checkbox">
+                    <input type="checkbox" name="field-fk">
+                    <label>Foreign key</label>
+                </div>
                 <div class="refs" style="display: none">
-                    <label>Ref. Table</label>
-                    <select class="field-ref-table"></select>
-                    <br>
-                    <label>Ref. Field</label>
-                    <select class="field-ref-fields"></select>
-                    <br>
+                    <div class="field-box">
+                        <span>Ref. Table</span>
+                        <select class="field-ref-table"></select>
                     </div>
-                <span class="action save-insert"><i class='mdi mdi-check-circle'></i>Save</span>
-                <span class="action cancel-insert"><i class='mdi mdi-cancel'></i>Cancel</span>
+                    <div class="field-box">
+                        <span>Ref. Field</span>
+                        <select class="field-ref-fields"></select>
+                    </div>
+                </div>
+                <span class="action save-insert"><i class="mdi mdi-check-circle"></i>Save</span>
+                <span class="action cancel-insert"><i class="mdi mdi-cancel"></i>Cancel</span>
             </div>
         </td>
     </tr>
@@ -114,7 +123,7 @@
 <div class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <span class="close-modal"><i class='mdi mdi-close'></i></span>
+            <span class="close-modal"><i class="mdi mdi-close"></i></span>
             <span class="title-modal">Export to SQL</span>
         </div>
         <div class="modal-body">

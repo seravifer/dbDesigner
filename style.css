@@ -157,3 +157,25 @@ main {
 .modal-body {
     padding: 20px;
 }
+
+.changes {
+    padding: 10px;
+}
+
+.changes .field-box {
+    margin-bottom: 8px;
+}
+
+.changes .field-box span {
+    width: 30%;
+    float: left;
+}
+
+.changes .field-box input[type=text],
+.changes .field-box select {
+    width: 60%;
+}
+
+.changes .checkbox {
+    margin-left: 30%;
+}
