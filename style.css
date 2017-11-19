@@ -50,6 +50,10 @@ main {
     padding: 6px 10px;
 }
 
+.entity-table .ui-sortable-helper {
+    border: 1px solid #adadad;
+}
+
 .entity-table td:first-child {
     width: 70px;
 }
@@ -178,4 +182,10 @@ main {
 
 .changes .checkbox {
     margin-left: 30%;
+}
+
+.edit-table-section input,
+.edit-table-section textarea {
+    margin-bottom: 6px;
+    width: 60%;
 }

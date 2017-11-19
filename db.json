@@ -2,8 +2,8 @@
     {
         "name": "Empleado",
         "comment": "",
-        "posX": 334,
-        "posY": 382,
+        "posX": 172,
+        "posY": 44,
         "fields": [
             {
                 "text": "empleado_id",
@@ -36,15 +36,18 @@
                 "null": false,
                 "unique": false,
                 "ai": false,
-                "foreign": []
+                "foreign": [
+                    "Clientes",
+                    "id"
+                ]
             }
         ]
     },
     {
         "name": "Clientes",
         "comment": "",
-        "posX": 203,
-        "posY": 100,
+        "posX": 767,
+        "posY": 62,
         "fields": [
             {
                 "text": "id",

@@ -1,7 +1,7 @@
-const fs = require('fs');
+const fs = require("fs");
 const pathElectron = require("path");
 const electron = require("electron");
-const ipc = require('electron').ipcRenderer;
+const ipc = require("electron").ipcRenderer;
 const {dialog} = electron.remote;
 
 $(function () {
@@ -9,32 +9,14 @@ $(function () {
     var data = [];
     var path;
 
-    ipc.on('menuActions', (event, message) => {
+    ipc.on("menuActions", (event, message) => {
         switch (message) {
             case "new":
-                if (checkSave()) {
-                    let answer = dialog.showMessageBox({
-                        type: "warning",
-                        title: "dbDesigner",
-                        message: "Want to save your changes?",
-                        buttons: ["Save", "Don't save"],
-                        noLink: true
-                    });
-                    if (answer === 0) saveDB();
-                }
+                maySave();
                 newDB();
                 break;
             case "open":
-                if (checkSave()) {
-                    let answer = dialog.showMessageBox({
-                        type: "warning",
-                        title: "dbDesigner",
-                        message: "Want to save your changes?",
-                        buttons: ["Save", "Don't save"],
-                        noLink: true
-                    });
-                    if (answer === 0) saveDB();
-                }
+                maySave();
                 var newPath = dialog.showOpenDialog({
                     properties: ['openFile'],
                     filters: [{name: 'Database', extensions: ['json']}]
@@ -71,7 +53,7 @@ $(function () {
         path = pathDB;
         data = [];
         $("main").empty();
-        data = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+        data = JSON.parse(fs.readFileSync(path, "utf8").toString());
         initView();
         setTimeout(function () { // Fucking problem, why!?
             writeCanvas();
@@ -100,10 +82,23 @@ $(function () {
         }
     }
 
+    function maySave() {
+        if (checkSave()) {
+            let answer = dialog.showMessageBox({
+                type: "warning",
+                title: "dbDesigner",
+                message: "Want to save your changes?",
+                buttons: ["Save", "Don't save"],
+                noLink: true
+            });
+            if (answer === 0) saveDB();
+        }
+    }
+
     function checkSave() {
         var old = "";
         try {
-            old = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+            old = JSON.parse(fs.readFileSync(path, "utf8").toString());
         } catch (error) {
         }
         return JSON.stringify(data) !== JSON.stringify(old);
@@ -163,7 +158,7 @@ $(function () {
                         text: data[i].name
                     }));
                 }
-                var t = searchTable(result.foreign[0]); // TODO BUG: change the nameTable
+                var t = searchTable(result.foreign[0]); // TODO BUG: nameTable could change
                 for (var u in data[t]["fields"]) {
                     html.find(".field-ref-fields").append($("<option>", {
                         value: data[t]["fields"][u].text,
@@ -392,7 +387,7 @@ $(function () {
             unique: items[6],
             ai: items[7],
         };
-        if (items.length > 7) {
+        if (items.length > 8) {
             obj.foreign = [items[8], items[9]];
         } else obj.foreign = [];
         data[i]['fields'].push(obj);
@@ -410,9 +405,9 @@ $(function () {
                 data[i]['fields'][u].null = items[5];
                 data[i]['fields'][u].unique = items[6];
                 data[i]['fields'][u].ai = items[7];
-                if (items.length > 7) {
-                    data[i]['fields'][u]['foreign'] = [items[8], items[9]];
-                }
+                if (items.length > 8) {
+                    data[i]['fields'][u].foreign = [items[8], items[9]];
+                } else data[i]['fields'][u].foreign = [];
             }
         }
     }
@@ -515,25 +510,50 @@ $(function () {
                     var posP2 = P2.offset();
 
                     var posP1right = posP1.left + P1.outerWidth();
+                    var posP2right = posP2.left + P2.outerWidth();
 
                     ctx.beginPath();
-                    if (posP2.left - 50 < posP1right) {
-                        var right = posP1.left - (posP2.left - posP1.left);
-                        ctx.moveTo(posP1.left, posP1.top + 15);
-                        ctx.bezierCurveTo(right, posP1.top + 15, posP1.left, posP2.top + 15, posP2.left, posP2.top + 15);
-                    } else {
+                    if (posP1.left > posP2right) { // P1 < P2
+                        console.log("P1 < P2");
+                        posP2.left = posP2right;
+                        let middle = (posP1.left + posP2.left) / 2;
+                        ctx.moveTo(posP2.left + 15, posP2.top + 15);
+                        ctx.bezierCurveTo(middle, posP2.top + 15, middle, posP1.top + 15, posP1.left, posP1.top + 15);
+                        drawArrow(ctx, posP2.left +15, posP2.top + 15, 180);
+                    } else if (posP2.left > posP1right) { // P1 > P2
+                        console.log("P1 > P2");
                         posP1.left = posP1right;
-                        var middle = (posP1.left + posP2.left) / 2;
+                        let middle = (posP1.left + posP2.left) / 2;
                         ctx.moveTo(posP1.left, posP1.top + 15);
-                        ctx.bezierCurveTo(middle, posP1.top + 15, middle, posP2.top + 15, posP2.left, posP2.top + 15);
+                        ctx.bezierCurveTo(middle, posP1.top + 15, middle, posP2.top + 15, posP2.left-15, posP2.top + 15);
+                        drawArrow(ctx, posP2.left -15, posP2.top + 15, 0);
+                    } else { // P1 = P2
+                        console.log("P1 = P2");
+                        ctx.moveTo(posP1.left, posP1.top + 15);
+                        ctx.bezierCurveTo(posP1.left - 200, posP1.top + 15, posP2.left - 200, posP2.top + 15, posP2.left-15 , posP2.top + 15);
+                        drawArrow(ctx, posP2.left -15, posP2.top + 15, 0);
                     }
-                    ctx.stroke();
-
-                    console.log("Pos: " + posP1.top + " - " + posP1.left + " - " + posP2.top + " - " + posP2.left + " - " + (right||middle));
+                    console.log("PosP1: " + posP1.left + "x - " + posP1.top + "y - " + posP1right +
+                        "\nPosP2: " + posP2.left + "x - " + posP2.top + "y - " + posP2right);
                 }
             }
         }
 
+    }
+
+    function drawArrow(ctx, x, y, t) {
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(t*Math.PI/180);
+        ctx.moveTo(0,0);
+        ctx.lineTo(0,-6);
+        ctx.lineTo(16,0);
+        ctx.lineTo(0,6);
+        ctx.lineTo(0,0);
+        ctx.fill();
+        ctx.restore();
     }
 
     window.onbeforeunload = (e) => {
