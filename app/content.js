@@ -158,7 +158,7 @@ $(function () {
                         text: data[i].name
                     }));
                 }
-                var t = searchTable(result.foreign[0]); // TODO BUG: nameTable could change
+                var t = searchTable(result.foreign[0]);
                 for (var u in data[t]["fields"]) {
                     html.find(".field-ref-fields").append($("<option>", {
                         value: data[t]["fields"][u].text,
@@ -193,9 +193,12 @@ $(function () {
             if (items[5] === true) desc += "<i class='mdi mdi-do-not-disturb' title='Allow null'></i>";
             if (items[6] === true) desc += "<i class='mdi mdi-key-variant' title='Unique'></i>";
             if (items[7] === true) desc += "<i class='mdi mdi-playlist-plus' title='Autoincrement'></i>";
+            var types = items[1];
+            if (items[2] > 0) types += "(" + items[2] + ")";
+            if (items[3] !== "") types += " [" + items[3] + "]";
             var html = "        <td>" + desc + "</td>\n" +
                 "        <td>" + items[0] + "</td>\n" +
-                "        <td>" + items[1] + "</td>\n" +
+                "        <td>" + types + "</td>\n" +
                 "        <td class='rightmost'>\n" +
                 "            <i class='mdi mdi-pencil edit-field'></i>\n" +
                 "            <i class='mdi mdi-drag-vertical move-field'></i>\n" +
@@ -433,15 +436,6 @@ $(function () {
         }
     }
 
-    function getForignkey(nameTable) {
-        var items = [];
-        var i = searchTable(nameTable);
-        for (var u in data[i]['fields']) {
-            if (data[i]['fields'][u].pk === true) items.push(data[i]['fields'][u].name)
-        }
-        return items;
-    }
-
 
     function searchTable(nameTable) {
         for (var i in data) {
@@ -457,14 +451,24 @@ $(function () {
     }
 
     function editTable(nameTable, newName, newComment) {
-        var i = searchTable(nameTable);
+        let i = searchTable(nameTable);
         data[i].name = newName;
         data[i].comment = newComment;
+        for (let i in data) {
+            for (var u in data[i]['fields']) {
+                if (data[i]['fields'][u]['foreign'][0] === nameTable) data[i]['fields'][u]['foreign'][0] = newName;
+            }
+        }
     }
 
     function deleteTable(nameTable) {
-        var i = searchTable(nameTable);
+        let i = searchTable(nameTable);
         data.splice(i, 1);
+        for (let i in data) {
+            for (var u in data[i]['fields']) {
+                if (data[i]['fields'][u]['foreign'][0] === nameTable) data[i]['fields'][u].foreign = [];
+            }
+        }
     }
 
     function updatePos(nameTable, posX, posY) {
@@ -486,6 +490,8 @@ $(function () {
                 if (data[i]['fields'][u].null === false) result += " NOT NULL";
                 if (data[i]['fields'][u].unique === true) result += " UNIQUE";
                 if (data[i]['fields'][u].text !== data[i]['fields'][data[i]['fields'].length - 1].text) result += ",";
+                if (data[i]['fields'][u].foreign.length > 0)
+                    result += "\n\tFOREIGN KEY (" + data[i]['fields'][u].text + ") REFERENCES " + data[i]['fields'][u]['foreign'][0] + "(" +data[i]['fields'][u]['foreign'][1] + "),";
                 if (data[i]['fields'][u].pk === true) result += "\n\tPRIMARY KEY (`" + data[i]['fields'][u].text + "`),";
             }
             result += "\n);\n";
@@ -546,17 +552,17 @@ $(function () {
         ctx.beginPath();
         ctx.save();
         ctx.translate(x, y);
-        ctx.rotate(t*Math.PI/180);
-        ctx.moveTo(0,0);
-        ctx.lineTo(0,-6);
-        ctx.lineTo(16,0);
-        ctx.lineTo(0,6);
-        ctx.lineTo(0,0);
+        ctx.rotate(t * Math.PI / 180);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -6);
+        ctx.lineTo(16, 0);
+        ctx.lineTo(0, 6);
+        ctx.lineTo(0, 0);
         ctx.fill();
         ctx.restore();
     }
 
-    window.onbeforeunload = (e) => {
+    window.onbeforeunload = (e) => { // Prevent close without save
         e.returnValue = false;
         if (checkSave()) {
             var answer = dialog.showMessageBox({
@@ -577,6 +583,6 @@ $(function () {
 
     require(pathElectron.resolve('./contextmenu'));
 
-    loadDB("db.json"); // DevTool
+    loadDB("database.json"); // DevTool
 
 });
